@@ -5,7 +5,7 @@ import { Quiz } from '../types';
 import { formatDateToCustomString } from '@/app/_lib/utils';
 import { Card } from '@/app/_components/ui/card';
 import { Copy, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 
 interface QuizCardProps {
   quiz: Quiz;
@@ -14,13 +14,20 @@ interface QuizCardProps {
 export const QuizCard = ({ quiz }: QuizCardProps) => {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
-  
+
   const quizUrl = `${window.location.origin}/dashboard/host/take/${quiz.id}_${quiz.userId}`;
 
   const handleNavigate = () => {
-    router.push(
-      `/dashboard/host/host?quiz=${encodeURIComponent(JSON.stringify(quiz))}`
-    );
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+
+      router.push(
+        `/dashboard/host/host?quiz=${encodeURIComponent(JSON.stringify(quiz))}`
+      );
+    })
   };
 
   const handleCopyLink = async (e: React.MouseEvent) => {

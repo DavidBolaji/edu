@@ -3,7 +3,7 @@
 import { Grid, MenuProps } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import Image from 'next/image';
-import React from 'react';
+import React, { startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Book,
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<{ role: ROLE }> = ({ role }) => {
   };
 
   return (
-    screen.lg && (
+    screen.xl && (
       <Sider
         trigger={null}
         style={{
@@ -94,7 +94,17 @@ export const Sidebar: React.FC<{ role: ROLE }> = ({ role }) => {
           mode="inline"
           defaultSelectedKeys={[locationCurrent]}
           selectedKeys={[locationCurrent]}
-          onClick={(menuInfo: { key: string }) => router.push(menuInfo?.key)}
+          onClick={(menuInfo: { key: string }) => {
+            // start showing the loading bar
+            ; (window as any).__showTopProgress?.()
+             ;(window as any).__showOverlayLoading?.()
+
+            // perform the navigation
+            startTransition(() => {
+              router.push(menuInfo?.key)
+            })
+          }
+          }
           items={items.filter((el: any) => {
             if (role === 'STUDENT') return !protect.includes(el.label);
             return true;

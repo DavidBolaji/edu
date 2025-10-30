@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { startTransition } from 'react';
 import MyImageAndSchool from './my-image-and-school';
 import MyCounts from './my-counts';
 import { UserDetail } from '@/src/entities/models/user';
@@ -14,35 +14,66 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
   const router = useRouter();
   const { endCallForAll, markUserLive, createCall } = useCreatorActions();
   const handleClick = async () => {
-   const id = user?.code || uuid()
-   if(!user.code) {
+    const id = user?.code || uuid()
+    if (!user.code) {
 
-    const live = markUserLive(id)
-    const call = createCall(id)
+      const live = markUserLive(id)
+      const call = createCall(id)
 
-    try {
-      await Promise.all([live, call])
-    } catch (error) {
-      console.log(`an error occured ${(error as Error).message}`)
-      return;
+      try {
+        await Promise.all([live, call])
+      } catch (error) {
+        console.log(`an error occured ${(error as Error).message}`)
+        return;
+      }
+
     }
 
-   }
-   router.push(`/dashboard/class?roomId=${id}&userId=${user.id}&creator=1&name=${`${user.fname} ${user.lname}`}`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/class?roomId=${id}&userId=${user.id}&creator=1&name=${`${user.fname} ${user.lname}`}`);
+    })
   };
-  
+
   const handleHostQuiz = () => {
-    router.push(`/dashboard/host`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/host`);
+    })
   };
   const handleCreatePortal = () => {
-    router.push(`/dashboard/portal`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/portal`);
+    })
   };
   const handleAnalytics = () => {
-    router.push(`/dashboard/analytics`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/analytics`);
+    })
   };
 
   const handleSubscription = () => {
-    router.push(`/dashboard/subscription`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/subscription`);
+    })
   };
 
   const endCall = async () => {

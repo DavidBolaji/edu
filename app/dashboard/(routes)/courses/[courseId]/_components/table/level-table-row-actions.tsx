@@ -13,6 +13,7 @@ import {
 import { Button } from '@/app/_components/ui/button';
 import { Edit, Trash2, ViewIcon } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { startTransition } from 'react';
 
 interface DataTableRowActionsProps {
   row: Row<Level>;
@@ -62,7 +63,14 @@ export function LevelTableRowActions({ row }: DataTableRowActionsProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
-              router.push(`/dashboard/courses/${courseId}/${row.original.id}`);
+              // start showing the loading bar
+              ; (window as any).__showTopProgress?.()
+                ; (window as any).__showOverlayLoading?.()
+              // perform the navigation
+              startTransition(() => {
+
+                router.push(`/dashboard/courses/${courseId}/${row.original.id}`);
+              })
             }}
             className="text-red-500!"
           >

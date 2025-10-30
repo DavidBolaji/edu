@@ -3,6 +3,7 @@ import './globals.css';
 import { TanstackProvider } from '@/tanstack/tanstack-provider';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Toaster } from 'sonner';
+import Progress from './_components/progress';
 
 const defaultUrl =
   process.env.NEXT_PUBLIC_ENV === 'prod'
@@ -196,6 +197,7 @@ export const metadata = {
   },
 };
 
+
 export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
@@ -211,6 +213,7 @@ export default function RootLayout({
       <body>
         <AntdRegistry>
           <TanstackProvider>
+            <Progress />
             <Toaster />
             {children}
           </TanstackProvider>

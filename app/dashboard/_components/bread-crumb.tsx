@@ -1,5 +1,6 @@
 'use client';
 
+import AppLink from '@/app/_components/app-link';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,9 +38,9 @@ export function DashboardBreadcrumb({
             {index !== paths.length - 1 ? (
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href={p.url} className="capitalize cursor-pointer">
+                  <AppLink href={p.url} className="capitalize cursor-pointer">
                     {p.name}
-                  </Link>
+                  </AppLink>
                 </BreadcrumbLink>
               </BreadcrumbItem>
             ) : (

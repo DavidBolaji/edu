@@ -33,7 +33,7 @@ const Dashboardlayout: React.FC<PropsWithChildren> = async ({ children }) => {
         <div className="absolute">
           <Sidebar role={user.role} />
         </div>
-        <div className="md:ml-64 bg-black">
+        <div className="xl:ml-64 bg-black">
           <Layout>
             <DashboardHeader name={user.fname} src={user.picture} />
             <Content

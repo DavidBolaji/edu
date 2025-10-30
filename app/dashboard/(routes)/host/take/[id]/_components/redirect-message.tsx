@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { startTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface RedirectMessageProps {
@@ -18,7 +18,13 @@ export const RedirectMessage = ({
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push(redirectUrl);
+      // start showing the loading bar
+      ; (window as any).__showTopProgress?.()
+        ; (window as any).__showOverlayLoading?.()
+      // perform the navigation
+      startTransition(() => {
+        router.push(redirectUrl);
+      })
     }, delay);
 
     return () => clearTimeout(timer);

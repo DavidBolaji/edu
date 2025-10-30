@@ -4,7 +4,7 @@ import { Button } from '@/app/_components/ui/button';
 import usePwa from '@/app/_hooks/use-pwa';
 import { cn } from '@/app/_lib/utils';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React, { startTransition } from 'react';
 
 const hashIcon = {
   AUDIO: '🎧',
@@ -30,7 +30,15 @@ const RenderMedia: React.FC<{ media: Record<string, number> }> = ({
           'bg-green-400': med === 'EBOOK',
         }
       )}
-      onClick={() => router.push('/dashboard/unviewed')}
+      onClick={() => {
+        // start showing the loading bar
+        ; (window as any).__showTopProgress?.()
+          ; (window as any).__showOverlayLoading?.()
+        // perform the navigation
+        startTransition(() => {
+          router.push('/dashboard/unviewed')
+        })
+      }}
     >
       <h2 className="text-3xl mb-2">
         {hashIcon[med as keyof typeof hashIcon]}

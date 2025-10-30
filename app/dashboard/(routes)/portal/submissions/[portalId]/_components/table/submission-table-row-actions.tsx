@@ -9,9 +9,10 @@ import {
   DropdownMenuTrigger,
 } from '@/app/_components/ui/dropdown-menu';
 import { Button } from '@/app/_components/ui/button';
-import {  ViewIcon } from 'lucide-react';
+import { ViewIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Submission } from '../../../../types';
+import { startTransition } from 'react';
 
 interface DataTableRowActionsProps {
   row: Row<Submission>;
@@ -33,10 +34,16 @@ export function SubmissionTableRowActions({ row }: DataTableRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-         
+
           <DropdownMenuItem
             onClick={() => {
-              router.push(`${row.original.url}`);
+              // start showing the loading bar
+              ; (window as any).__showTopProgress?.()
+                ; (window as any).__showOverlayLoading?.()
+              // perform the navigation
+              startTransition(() => {
+                router.push(`${row.original.url}`);
+              })
             }}
             className="text-red-500!"
           >

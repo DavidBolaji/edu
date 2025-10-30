@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -78,7 +78,13 @@ export const TakeQuizComponent: React.FC<{
         educatorId,
       });
       toast.success('Quiz submitted successfully!');
-      router.push('/dashboard/home');
+      // start showing the loading bar
+      ; (window as any).__showTopProgress?.()
+        ; (window as any).__showOverlayLoading?.()
+      // perform the navigation
+      startTransition(() => {
+        router.push('/dashboard/home');
+      })
     } catch (error: any) {
       toast.error(error?.response?.data?.error || 'Submission failed');
     } finally {

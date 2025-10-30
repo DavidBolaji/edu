@@ -15,6 +15,10 @@ export const initials = [
     key: 'Mr',
     label: 'Mr',
   },
+    {
+    key: 'Ms',
+    label: 'Ms',
+  },
   {
     key: 'Mrs',
     label: 'Mrs',

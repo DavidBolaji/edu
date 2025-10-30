@@ -3,7 +3,7 @@
 import { LiveKitRoom } from "@livekit/components-react";
 import "@livekit/components-styles";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomConference from "./_components/custom-conference";
 import { jwtDecode } from "jwt-decode";
@@ -41,13 +41,13 @@ export default function LiveRoomPage() {
         const res = await fetch(`/api/token?room=${roomId}&username=${userId}&creator=${creator}&name=${name}`);
         const data = await res.json();
         setToken(data.token);
-  
+
         const payload = jwtDecode<TokenPayload>(data.token);
         const metadata = payload.metadata ? JSON.parse(payload.metadata) : {};
         const isHost = metadata.role === "host"
         setIsHost(isHost);
         setUser(metadata.name);
-        if(!isHost) {
+        if (!isHost) {
           await addUserToAttendees(roomId)
         }
 
@@ -69,7 +69,16 @@ export default function LiveRoomPage() {
       connect={true}
       audio={true}
       video={true}
-      onDisconnected={() => router.push("/dashboard/profile")}
+      onDisconnected={() => {
+        // start showing the loading bar
+        ; (window as any).__showTopProgress?.()
+        ;(window as any).__showOverlayLoading?.()
+
+        // perform the navigation
+        startTransition(() => {
+          router.push("/dashboard/profile")
+        })
+      }}
     >
       <CustomConference roomId={roomId} isHost={isHost} endCall={handleEndCall} name={user} />
     </LiveKitRoom>

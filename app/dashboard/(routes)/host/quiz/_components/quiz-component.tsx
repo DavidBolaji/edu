@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { startTransition, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { EmptyState } from '@/app/_components/empty-state';
@@ -52,7 +52,14 @@ const QuizComponent: React.FC<{
       return;
     }
 
-    router.push(`/dashboard/host/take/${selectedQuiz.id}_${tutorId}`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/host/take/${selectedQuiz.id}_${tutorId}`);
+    })
+
   };
 
   return (

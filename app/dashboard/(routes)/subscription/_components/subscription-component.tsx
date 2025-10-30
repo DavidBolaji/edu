@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { startTransition, useState } from 'react';
 import { Check } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -60,7 +60,15 @@ export default function SubscriptionComponent({
       toast.error('Insufficient balance. Please top up to subscribe.', {
         action: {
           label: 'Go Home',
-          onClick: () => router.push('/dashboard/home'),
+          onClick: () => {
+            // start showing the loading bar
+            ; (window as any).__showTopProgress?.()
+              ; (window as any).__showOverlayLoading?.()
+            // perform the navigation
+            startTransition(() => {
+              router.push('/dashboard/home')
+            })
+          },
         },
       });
       return;
@@ -90,7 +98,13 @@ export default function SubscriptionComponent({
       reload(`/dashboard/subscription`);
 
       toast.success('Subscription Successful');
-      router.push('/dashboard/home');
+      ; (window as any).__showTopProgress?.()
+        ; (window as any).__showOverlayLoading?.()
+      // perform the navigation
+      startTransition(() => {
+        router.push('/dashboard/home')
+      })
+
     } catch (error) {
       console.error('Subscription error:', error);
       toast.error('Failed to subscribe. Please try again later.');
@@ -104,9 +118,8 @@ export default function SubscriptionComponent({
       {list.map((feature, idx) => (
         <li key={idx} className="flex items-center gap-2">
           <div
-            className={`w-5 h-5 rounded-full flex items-center justify-center ${
-              selected ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'
-            }`}
+            className={`w-5 h-5 rounded-full flex items-center justify-center ${selected ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'
+              }`}
           >
             <Check className="w-3 h-3" />
           </div>
@@ -130,11 +143,10 @@ export default function SubscriptionComponent({
           return (
             <Card
               key={option.months}
-              className={`p-6 cursor-pointer transition border-2 ${
-                isSelected
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white border-gray-200'
-              }`}
+              className={`p-6 cursor-pointer transition border-2 ${isSelected
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white border-gray-200'
+                }`}
               onClick={() => setSelectedOption(option.months)}
             >
               <div className="flex justify-between items-center">
@@ -149,9 +161,8 @@ export default function SubscriptionComponent({
                 <div className="w-6 h-6 rounded-full border-2 border-white bg-indigo-600" />
               </div>
               <p
-                className={`text-sm mt-2 ${
-                  isSelected ? 'text-white' : 'text-gray-500'
-                }`}
+                className={`text-sm mt-2 ${isSelected ? 'text-white' : 'text-gray-500'
+                  }`}
               >
                 Enjoy complete access to Edutainment features for{' '}
                 {isFree ? 'Unlimited time' : option.label.toLowerCase()}.

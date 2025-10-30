@@ -8,6 +8,7 @@ import Spinner from '@/app/_components/ui/spinner';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import useSignUp from '@/app/_hooks/use-sign-up';
 import {
+  allSignUpSchemaType,
   signUpThreeSchema,
   SignUpThreeSchemaType,
 } from '@/src/entities/models/auth/sign-up-schema';
@@ -20,19 +21,24 @@ const SignUpThreeForm: React.FC<{
 }> = ({ prevStep }) => {
   const { insert, getSignUpData, signUpData } = useSignUp();
 
-  const onSubmit = async (
+const onSubmit = async (
     values: SignUpThreeSchemaType,
     { setSubmitting }: FormikHelpers<SignUpThreeSchemaType>
   ) => {
-    insert<SignUpThreeSchemaType>(values);
-
     setSubmitting(true);
 
-    const response = await signUp(signUpData!);
+    // Merge current step values with all previously collected signup data
+    const mergedData = { ...(signUpData ?? {}), ...values } as allSignUpSchemaType;
+
+    // Save to query cache for future reference (optional)
+    insert(mergedData);
+
+    // Now call signup with the full data
+    const response = await signUp(mergedData);
 
     if (!response) {
       setSubmitting(false);
-      return toast.success('Account creation successfull', {
+      return toast.success('Account creation successful', {
         position: 'top-right',
       });
     }
@@ -42,6 +48,8 @@ const SignUpThreeForm: React.FC<{
       toast.error(response.error, { position: 'top-right' });
       return;
     }
+
+    setSubmitting(false);
   };
 
   return (

@@ -6,7 +6,7 @@ import { subscribeOrUnsubscribe } from '@/app/dashboard/_services/subscription.s
 import { reload } from '@/app/dashboard/action';
 import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { startTransition, useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 const RenderButtons: React.FC<{
@@ -53,15 +53,33 @@ const RenderButtons: React.FC<{
 
   const handleJoin = () => {
     console.log(join.code, join.userId)
-    router.push(`/dashboard/class?roomId=${join.code}&userId=${join.userId}&name=${join.name}`);
+      // start showing the loading bar
+      ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/class?roomId=${join.code}&userId=${join.userId}&name=${join.name}`);
+    })
   };
 
   const handleViewPortal = () => {
-    router.push(`/dashboard/portal/${tutorId}`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/portal/${tutorId}`);
+    })
   };
 
   const handleViewQuiz = () => {
-    router.push(`/dashboard/host/quiz/${tutorId}`);
+    // start showing the loading bar
+    ; (window as any).__showTopProgress?.()
+      ; (window as any).__showOverlayLoading?.()
+    // perform the navigation
+    startTransition(() => {
+      router.push(`/dashboard/host/quiz/${tutorId}`);
+    })
   };
 
   return (

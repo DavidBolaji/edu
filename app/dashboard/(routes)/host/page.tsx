@@ -6,6 +6,7 @@ import { useQuizzes } from './_hooks/use-quiz';
 import { Button } from '@/app/_components/ui/button';
 import { QuizList } from './_components/quiz-list';
 import { EmptyState } from '@/app/_components/empty-state';
+import { startTransition } from 'react';
 
 const ViewQuizPage = () => {
   const { quizzes, loading } = useQuizzes();
@@ -19,7 +20,15 @@ const ViewQuizPage = () => {
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">All Quizzes</h1>
-        <Button onClick={() => router.push('/dashboard/host/host')}>
+        <Button onClick={() => {
+          // start showing the loading bar
+          ; (window as any).__showTopProgress?.()
+            ; (window as any).__showOverlayLoading?.()
+          // perform the navigation
+          startTransition(() => {
+            router.push('/dashboard/host/host')
+          })
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           New Quiz
         </Button>

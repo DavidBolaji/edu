@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { toast } from 'sonner';
@@ -55,7 +55,13 @@ export const useQuizForm = () => {
         await createQuiz(payload);
       }
       toast.success('Quiz saved successfully!');
-      router.push('/dashboard/profile');
+      // start showing the loading bar
+      ; (window as any).__showTopProgress?.()
+        ; (window as any).__showOverlayLoading?.()
+      // perform the navigation
+      startTransition(() => {
+        router.push('/dashboard/profile');
+      })
     } catch (error: any) {
       toast.error('Error saving quiz', {
         description:
