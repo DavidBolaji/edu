@@ -18,16 +18,15 @@ export async function sendEmail({ fname, email }: { fname: string, email: string
     const emailContent = `
       <h2>Welcome</h2>
       <p>Hi ${fname},</p>
-      <p>Welcome to edutainment — we’re happy to have you onboard!</p>
+      <p>Welcome to Mobile Classroom — we’re happy to have you onboard!</p>
       <p>Your account has been successfully created. You can now log in and start exploring the tools designed to help you achieve your goals faster and easier.</p>
       <p>If you have any questions or need assistance, our support team is always ready to help.</p>
       <p>Thanks for joining us — we can’t wait to see what you achieve!</p>
-      <p>Best regards,<br>The Edutainment Team</p>
+      <p>Best regards,<br>The Mobile Classroom Team</p>
     `
 
     // TODO: Integrate with email service (Resend, SendGrid, etc.)
     // For now, we'll just log the email that would be sent
-   
 
     // Example with Resend (uncomment when integrated):
     const response = await fetch('https://api.resend.com/emails', {
@@ -37,7 +36,7 @@ export async function sendEmail({ fname, email }: { fname: string, email: string
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'noreply@edutainment.app',
+        from: 'noreply@liveclass.app',
         to: email,
         subject: `Welcome`,
         html: emailContent,

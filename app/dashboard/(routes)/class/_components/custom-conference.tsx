@@ -1076,7 +1076,9 @@ export default function CustomConference({
           </div>
 
           {/* Center - Main controls */}
-          <div className="flex items-center gap-2 md:scale-100 md:translate-x-0 -translate-x-20 scale-75">
+          <div className="flex flex-wrap justify-center items-center gap-2 
+                scale-75 -translate-x-20 
+                md:scale-100 md:translate-x-0">
             {/* Audio with dropdown */}
             <div className="relative" ref={micMenuRef}>
               <div className="flex">

@@ -13,7 +13,7 @@ import { InputParseError } from '@/src/entities/error/common';
 
 // import webpush from 'web-push'
 webpush.setVapidDetails(
-  'https://edutainment.com',
+  'https://edu-ivory.vercel.app',
   process.env.NEXT_PUBLIC_VAPID_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );

@@ -269,7 +269,7 @@ model Session {
 
 model WebPush {
   id      String @id @default(uuid())
-  userId  String
+  userId  String @unique
   user    User   @relation(fields: [userId], references: [id])
   pushUrl String @db.LongText()
 

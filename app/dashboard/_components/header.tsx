@@ -4,10 +4,12 @@ import { LOGO_URL } from '@/config';
 import { Header } from 'antd/es/layout/layout';
 import Image from 'next/image';
 import AvatarComponent from './avatar-component';
-import { MenuIcon, XIcon } from 'lucide-react';
+import { LogOut, MenuIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { signOut } from '../action';
+import { toast } from 'sonner';
 
 export const DashboardHeader: React.FC<{
   name: string;
@@ -18,6 +20,16 @@ export const DashboardHeader: React.FC<{
 
   const handleMenuClick = () => {
     setVisible((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    const response = await signOut();
+
+    if (!response?.error) {
+      return toast.success('Successfully signed out');
+    }
+
+    return toast.error(response.error);
   };
 
   return (
@@ -55,14 +67,22 @@ export const DashboardHeader: React.FC<{
             }}
             animate={{
               x: 0,
-              transition: {type: "tween"}
+              transition: { type: "tween" }
               // transition: { type: 'linear' },
             }}
             exit={{
               x: -700,
             }}
           >
-            <div className="flex justify-end items-center"></div>
+            <div className="flex justify-end items-center">
+              <div
+                className="absolute bottom-6 px-5 -translate-x-2 cursor-pointer gap-3 font-bold font-onest pl-12 flex items-center red-100 text-white"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                Logout
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
