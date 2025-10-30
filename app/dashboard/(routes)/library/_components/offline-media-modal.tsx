@@ -43,8 +43,6 @@ export function OfflineViewerModal() {
     setOpen(null);
   };
 
-  console.log(currentBlobUrl);
-
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !val && close()}>
       <DialogTitle className="hidden">{currentRow?.fileName}</DialogTitle>

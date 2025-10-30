@@ -24,8 +24,6 @@ export const QuizForm = ({ submited }: { submited: boolean }) => {
 
   });
 
-  console.log(formik.errors)
-
   if (loading) return <Spinner />;
 
   return (

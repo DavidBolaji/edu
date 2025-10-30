@@ -59,11 +59,9 @@ const DownloadButton = ({
       });
 
       const blob = response.data;
-      console.log('[BLOB]', blob);
 
       // Cache the media file
       const resp = new Response(blob);
-      console.log('[RESPONSE]', resp);
       const cache = await caches.open(CACHE_NAME);
       await cache.put(mediaUrl, resp);
 
@@ -83,7 +81,7 @@ const DownloadButton = ({
           name: name,
         },
       };
-      console.log(metadata);
+     
       await saveMetadata(metadata);
 
       setIsCached(true);

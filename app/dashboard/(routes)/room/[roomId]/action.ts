@@ -52,8 +52,6 @@ export const updateUser = async ({
 
   const session = await validate(sessionId);
 
-  console.log(session.userId, islive, code)
-
   try {
     await db.user.update({
       where: { id: session.userId },
@@ -70,7 +68,6 @@ export const createCallRecord = async (roomId: string) => {
   if (!sessionId) {
     throw new Error('User not authenticated');
   }
-  console.log('[ROOMID2]', roomId);
 
   const session = await validate(sessionId);
   try {

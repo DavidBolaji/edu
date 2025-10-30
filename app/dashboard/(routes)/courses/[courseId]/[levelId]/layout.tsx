@@ -10,7 +10,7 @@ const MediaLayout: React.FC<
   const req = await getCourseTitle({ courseId: params.courseId });
   const req2 = await getLevelName({ levelId: params.levelId });
   const isLevel = !!req2.level;
-  console.log(isLevel);
+
   const last = isLevel
     ? [
         {

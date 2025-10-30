@@ -27,9 +27,7 @@ export async function sendEmail({ fname, email }: { fname: string, email: string
 
     // TODO: Integrate with email service (Resend, SendGrid, etc.)
     // For now, we'll just log the email that would be sent
-    console.log(`[Email] To: ${email}`)
-
-    console.log(`[Email] Content: ${emailContent}`)
+   
 
     // Example with Resend (uncomment when integrated):
     const response = await fetch('https://api.resend.com/emails', {

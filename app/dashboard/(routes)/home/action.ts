@@ -7,8 +7,6 @@ export const createOffline = async (data: any) => {
   const userId = (await getDetails()).id;
   const { mediaId, educatorId } = data;
 
-  console.log('[GOT_HERE]');
-
   const offline = await db.offlineDownload.create({
     data: {
       userId,

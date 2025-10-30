@@ -157,7 +157,6 @@ const getTotalSubscriptions = async () => {
 export const getSchoolAnalyticsService = async (userId: string) => {
   const now = new Date();
   const startOfCurrentMonth = startOfMonth(now);
-  console.log(userId);
 
   const [
     offlineDownloads,
@@ -180,8 +179,6 @@ export const getSchoolAnalyticsService = async (userId: string) => {
     liveClasses * POINT_VALUES.LIVE_CLASS_ATTENDANCE +
     mediaPlays * POINT_VALUES.MEDIA_PLAY;
 
-  console.log(totalPoints, totalSchoolPoints, totalSubscriptions);
-
   const accruedAmount =
     totalSchoolPoints > 0
       ? (totalPoints / totalSchoolPoints) *
@@ -201,6 +198,5 @@ export const getSchoolAnalyticsService = async (userId: string) => {
 export const getAnalytics = async () => {
   const userId = (await getDetails()).id;
   const analytics = await getSchoolAnalyticsService(userId);
-  console.log(analytics);
   return analytics;
 };

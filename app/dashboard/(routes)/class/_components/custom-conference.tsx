@@ -10,6 +10,7 @@ import {
   VideoTrack,
   AudioTrack,
   TrackRefContext,
+  VideoConference,
 } from "@livekit/components-react";
 import { Track, Participant } from 'livekit-client';
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -802,7 +803,7 @@ export default function CustomConference({
   };
 
   return (
-    <div className="flex flex-col h-screen md:pb-0 pb-20 bg-gray-900 text-white relative">
+    <div className="flex flex-col h-screen md:pb-0 bg-gray-900 text-white relative">
       {/* Floating Reactions */}
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {activeReactions.map((reaction) => (
@@ -903,55 +904,8 @@ export default function CustomConference({
                 ))}
               </div>
             </div>
-          ) : sortedParticipants.length <= 2 ? (
-            // 1-2 participants: Large tiles
-            <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sortedParticipants.map((participant) => (
-                <CustomParticipantTile
-                  key={participant.identity}
-                  participant={participant}
-                  isMain={true}
-                  cameraTrackRef={cameraTrackMap.get(participant.identity)}
-                />
-              ))}
-            </div>
-          ) : sortedParticipants.length <= 4 ? (
-            // 3-4 participants: 2x2 grid
-            <div className="h-full grid grid-cols-2 grid-rows-2 gap-4">
-              {sortedParticipants.map((participant) => (
-                <CustomParticipantTile
-                  key={participant.identity}
-                  participant={participant}
-                  isMain={true}
-                  cameraTrackRef={cameraTrackMap.get(participant.identity)}
-                />
-              ))}
-            </div>
           ) : (
-            // 5+ participants: Active speaker + grid
-            <div className="h-full flex flex-col gap-4">
-              {/* Main speaker area */}
-              <div className="flex-1 min-h-0">
-                {sortedParticipants[0] && (
-                  <CustomParticipantTile
-                    participant={sortedParticipants[0]}
-                    isMain={true}
-                    cameraTrackRef={cameraTrackMap.get(sortedParticipants[0].identity)}
-                  />
-                )}
-              </div>
-
-              {/* Other participants */}
-              <div className="h-40 overflow-x-auto">
-                <div className="flex gap-2 h-full">
-                  {sortedParticipants.slice(1).map((participant) => (
-                    <div key={participant.identity} className="w-56 h-full flex-shrink-0">
-                      <CustomParticipantTile participant={participant} cameraTrackRef={cameraTrackMap.get(participant.identity)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <VideoConference  />
           )}
 
           {/* RoomAudioRenderer MUST be outside GridLayout */}
@@ -960,7 +914,7 @@ export default function CustomConference({
 
         {/* Sidebar - Participants */}
         {showParticipants && (
-          <div className={`${isMobile ? 'fixed top-0 right-0 z-40 w-full h-full' : 'w-80'} ${isMobile ? 'bg-gray-900' : 'bg-gray-800'} border-l border-gray-700 p-4 overflow-y-auto`}>
+          <div className={`${isMobile ? 'fixed top-0 right-0 z-50 w-full h-full pb-20' : 'w-80'} ${isMobile ? 'bg-gray-900' : 'bg-gray-800'} border-l border-gray-700 p-4 overflow-y-auto`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
                 Participants ({participants.length})
@@ -1036,7 +990,7 @@ export default function CustomConference({
 
         {/* Sidebar - Chat */}
         {showChat && (
-          <div className={`${isMobile ? 'fixed top-0 right-0 z-40 w-full h-full' : 'w-80'} ${isMobile ? 'bg-gray-900' : 'bg-gray-800'} border-l border-gray-700 flex flex-col`}>
+          <div className={`${isMobile ? 'fixed top-0 right-0 z-50 w-full h-full pb-20' : 'w-80'} ${isMobile ? 'bg-gray-900' : 'bg-gray-800'} border-l border-gray-700 flex flex-col`}>
             <div className="p-4 border-b border-gray-700 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">In-call messages</h3>
@@ -1106,7 +1060,7 @@ export default function CustomConference({
       </div>
 
       {/* Bottom Control Bar */}
-      <div className="px-6 py-4 bg-gray-800 border-t border-gray-700">
+      <div className="px-6 py-4">
         <div className="flex items-center text-wrap justify-between max-w-7xl mx-auto">
           {/* Left side - Audio Visualizer - Fixed width to prevent movement */}
           <div className="flex items-center gap-3 text-sm text-gray-400 w-48">
@@ -1122,7 +1076,7 @@ export default function CustomConference({
           </div>
 
           {/* Center - Main controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:scale-100 md:translate-x-0 -translate-x-20 scale-75">
             {/* Audio with dropdown */}
             <div className="relative" ref={micMenuRef}>
               <div className="flex">
@@ -1144,7 +1098,7 @@ export default function CustomConference({
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-gray-700 hover:bg-gray-600'
                     }`}
-                  title="Select microphone"
+                  title="Select mic"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                     <path d="M6 8L2 4h8L6 8z" />
@@ -1154,7 +1108,7 @@ export default function CustomConference({
               {showMicMenu && (
                 <div className={`absolute ${isMobile ? 'bottom-full left-0 w-full' : 'bottom-full left-0 w-64'} mb-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50`}>
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-700">
-                    SELECT MICROPHONE
+                    SELECT MIC
                   </div>
                   {audioDevices.length === 0 ? (
                     <div className="px-3 py-2 text-sm text-gray-400">No microphones found</div>
@@ -1355,8 +1309,6 @@ export default function CustomConference({
           </div>
         </div>
       </div>
-
-      {/* Device Selection Modals */}
 
     </div>
   );

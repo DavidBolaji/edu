@@ -43,9 +43,6 @@ export function MediaControls({
   const [dragValue, setDragValue] = useState<number | null>(null)
   const display = dragValue ?? safeCurrent;
 
-  console.log("PLAYLIST")
-  console.log(playlist)
-
   const hasNext = playlist.length > 1
   const hasPrevious = playlist.length > 1
 

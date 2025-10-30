@@ -22,10 +22,8 @@ const RoomPage = () => {
     const initRoom = async () => {
       const creator = Boolean(get('creator') || 0);
       const user = await getDetails();
-      console.log('[CREATOR]', creator);
-
+  
       const [creatorId, roomID] = (roomId as string).split('_');
-      console.log(creatorId, roomID);
 
       setUser(user);
 

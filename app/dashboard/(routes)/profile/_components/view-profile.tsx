@@ -85,6 +85,13 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
       await endCallForAll(async () => {
         return '';
       }, user.code as string);
+
+      ; (window as any).__showTopProgress?.()
+        ; (window as any).__showOverlayLoading?.()
+      // perform the navigation
+      startTransition(() => {
+        router.push(`/dashboard/portal`);
+      })
     }
   };
   return (

@@ -13,7 +13,7 @@ const SetupNotification = () => {
         try {
           const registration = await navigator.serviceWorker.register('/sw.js');
           // Call showNotification only after successful registration
-          console.log('[REGGG]', registration)
+        
           showNotification();
         } catch (error) {
           console.error('Service Worker registration failed:', error);

@@ -152,3 +152,8 @@ body>* {
     transform: rotate(360deg);
   }
 }
+
+.lk-control-bar,
+.lk-chat {
+  display: none !important;
+}

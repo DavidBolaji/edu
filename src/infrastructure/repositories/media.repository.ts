@@ -34,7 +34,6 @@ export class MediaRepository implements IMediaRepository {
         },
       });
 
-      console.log('SERVER', unviewedMedia);
       return unviewedMedia;
     } catch (error) {
       throw error;

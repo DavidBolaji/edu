@@ -12,8 +12,6 @@ export const createPortal = async (data: any) => {
   const { desc, course, level, type, openDate, closeDate } = data;
   const userId = (await getDetails()).id;
 
-  console.log('[GOT_HERE]');
-
   const portal = await db.portal.create({
     data: {
       desc,
@@ -125,7 +123,6 @@ export const getPortalById = async (id: string) => {
 };
 
 export const updatePortal = async (data: any) => {
-  console.log('[PORTAL_UPDATE]', JSON.stringify(data, null, 2));
 
   await db.portal.update({
     where: {
@@ -145,7 +142,6 @@ export const updatePortal = async (data: any) => {
 };
 
 export const deleteManyPortal = async (ids: string[]) => {
-  console.log(ids);
 
   await db.portal.deleteMany({
     where: {

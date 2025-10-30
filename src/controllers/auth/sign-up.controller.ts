@@ -13,7 +13,6 @@ export type ISignUpController = ReturnType<typeof signUpController>;
 export const signUpController =
   (signUpUseCase: ISignUpUseCase, transactionService: ITransactionService) =>
   async (input: allSignUpSchemaType): Promise<Cookie> => {
-    console.log(input)
     try {
       return await transactionService.startTransaction(async (mainTx) => {
         try {

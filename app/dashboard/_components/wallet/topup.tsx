@@ -24,7 +24,7 @@ const TopUp: React.FC<UserDetail> = ({ email, id }) => {
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC as string;
 
   const onSuccess = async (reference: string) => {
-    console.log(reference);
+
     try {
       setLoading(true);
       await createTransaction({

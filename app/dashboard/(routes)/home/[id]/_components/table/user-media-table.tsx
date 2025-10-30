@@ -56,7 +56,7 @@ export function UserMediaTable({ columns, data }: DataTableProps) {
     useEffect(() => {
     
     const audioVideo = data.filter(el => el.type === "AUDIO")
-    console.log(audioVideo)
+   
     setPlaylist(audioVideo)
   }, [userId])
 

@@ -17,7 +17,6 @@ export const useCallAPI = () => {
   };
 
   const createCall = (roomId: string) => {
-    console.log('[ROOMUD]', roomId);
     return createCallRecord(roomId);
   };
 

@@ -63,6 +63,8 @@ export default function LiveRoomPage() {
   if (!token) return <p>Loading...</p>;
 
   return (
+    <div className="pb-20">
+
     <LiveKitRoom
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!}
@@ -76,12 +78,13 @@ export default function LiveRoomPage() {
 
         // perform the navigation
         startTransition(() => {
-          router.push("/dashboard/profile")
+          router.replace("/dashboard/profile")
         })
       }}
     >
       <CustomConference roomId={roomId} isHost={isHost} endCall={handleEndCall} name={user} />
     </LiveKitRoom>
+    </div>
 
   );
 }

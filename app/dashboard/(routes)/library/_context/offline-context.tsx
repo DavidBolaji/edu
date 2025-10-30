@@ -88,12 +88,12 @@ export const OfflineContextProvider: React.FC<PropsWithChildren> = ({
           return;
         }
 
-        console.log('[RES2]', response);
+      
 
         const blob = await response.blob();
-        console.log('[BLOB2]', blob);
+     
         const blobUrl = URL.createObjectURL(blob);
-        console.log('[URL]', blobUrl);
+      
         setCurrentBlobUrl(blobUrl);
       } catch (error) {
         console.error('Failed to load blob for currentRow:', error);

@@ -1,6 +1,5 @@
 "use client"
 
-
 import { Loader2, XIcon } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
@@ -18,7 +17,7 @@ export function MediaViewerModal() {
   const [isLoading, setIsLoading] = useState(true)
 
   const {
-    mediaRef, // Changed from mediaRef
+    mediaRef,
     isPlaying,
     isRepeating,
     currentTime,
@@ -50,6 +49,8 @@ export function MediaViewerModal() {
     return anyRow?.coverUrl || anyRow?.imageUrl || anyRow?.thumbnailUrl || "/images/disk-placeholder.png"
   }, [currentRow])
 
+  const isAudioOrVideo = viewerType === "audio" || viewerType === "video"
+
   return (
     isMinimized ? <MiniPlayer /> : <Dialog open={isOpen} onOpenChange={(val) => !val && close()}>
       <DialogTitle className="hidden">{currentRow?.name ?? "Media Viewer"}</DialogTitle>
@@ -70,8 +71,8 @@ export function MediaViewerModal() {
           <div className="h-2 w-full bg-gradient-to-r from-purple-300 via-fuchsia-300 to-rose-300" />
 
           <div className="grid w-full gap-6 p-4 sm:p-6">
-            {/* Loading overlay */}
-            {isLoading && (
+            {/* Loading overlay - only show for audio/video since ebook loads instantly */}
+            {isLoading && isAudioOrVideo && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -80,7 +81,7 @@ export function MediaViewerModal() {
             {/* Ebook */}
             {viewerType === "ebook" && currentRow?.url && (
               <iframe
-                src={currentRow.url}
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(currentRow.url)}&embedded=true`}
                 title="Ebook Viewer"
                 width="100%"
                 height={500}
@@ -91,20 +92,19 @@ export function MediaViewerModal() {
             )}
 
             {/* Audio / Video */}
-            {(viewerType === "audio" || viewerType === "video") && currentRow?.url && (
+            {isAudioOrVideo && currentRow?.url && (
               <>
                 {viewerType === "audio" ? (
                   <audio
-                    ref={mediaRef} // Changed from mediaRef
+                    ref={mediaRef}
                     src={currentRow.url}
                     className="mt-2 w-full"
                     onLoadedMetadata={handleMediaLoad}
-                    // Rely on our custom controls
                     controls={false}
                   />
                 ) : (
                   <video
-                    ref={mediaRef} // Changed from mediaRef
+                    ref={mediaRef}
                     src={currentRow.url}
                     className="mt-2 max-h-[420px] w-full rounded"
                     onLoadedMetadata={handleMediaLoad}
@@ -112,7 +112,7 @@ export function MediaViewerModal() {
                   />
                 )}
 
-                {/* Artwork */}
+                {/* Artwork - only for audio/video */}
                 <div className="mx-auto grid w-full place-items-center gap-4">
                   <div
                     className={cn(
@@ -147,7 +147,7 @@ export function MediaViewerModal() {
                   </div>
                 </div>
 
-                {/* Controls */}
+                {/* Controls - only for audio/video */}
                 <MediaControls
                   isPlaying={isPlaying}
                   isRepeating={isRepeating}

@@ -39,11 +39,11 @@ subscribeToPush()
         return;
       }
 
-      console.log(navigator)
+    
       
       try {
         const registration = await navigator.serviceWorker.ready;
-        console.log('REG', registration)
+      
         
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -52,7 +52,7 @@ subscribeToPush()
           ),
         });
         
-        console.log('SUBSCRIPTION', subscription)
+       
         const serializedSub = JSON.parse(JSON.stringify(subscription));
 
         const sub = await handleNotification(serializedSub);
