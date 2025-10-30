@@ -1,0 +1,173 @@
+/**
+* @license
+*
+* Font Family: instrument sans
+* URL: https://fonts.google.com/specimen/Instrument+Sans
+*
+* instrument Regular 
+* instrument Italic 
+* instrument Medium 
+* instrument MediumItalic 
+* instrument SemiBold 
+* instrument SemiBoldItalic 
+* instrument Bold 
+* instrument BoldItalic 
+* instrument Black 
+* instrument BlackItalic 
+* instrument Variable (Variable font)
+* instrument VariableItalic (Variable font)
+
+*
+*/
+
+@font-face {
+    font-family: 'SpaceMono-Regular';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-display: swap;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-Italic';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-display: swap;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-Medium';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 500;
+    font-display: swap;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-MediumItalic';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 500;
+    font-display: swap;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-SemiBold';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 600;
+    font-display: swap;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-SemiBoldItalic';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 600;
+    font-display: swap;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-Bold';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 700;
+    font-display: swap;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SpaceMono-Regular-BoldItalic';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: 700;
+    font-display: swap;
+    font-style: italic;
+}
+
+
+/**
+  * This is a variable font
+  * You can control variable axes as shown below:
+  * font-variation-settings: wght 900.0;
+  *
+  * available axes:
+  'wght' (range from 300.0 to 900.0
+  */
+
+
+/*   
+  @font-face {
+    font-family: 'Instrument-Variable';
+    src: url('/fonts/InstrumentSans-VariableFont_wdth,wght.ttf') format('truetype');
+    font-weight: 300 900;
+    font-display: swap;
+    font-style: normal;
+  } */
+
+
+/* Condensed variants */
+
+
+/* @font-face {
+      font-family: 'InstrumentSans-Condensed-Regular';
+      src: url('/fonts/InstrumentSans-Condensed-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-Italic';
+      src: url('/fonts/InstrumentSans-Condensed-Italic.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+      font-style: italic;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-Medium';
+      src: url('/fonts/InstrumentSans-Condensed-Medium.ttf') format('truetype');
+      font-weight: 500;
+      font-display: swap;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-MediumItalic';
+      src: url('/fonts/InstrumentSans-Condensed-MediumItalic.ttf') format('truetype');
+      font-weight: 500;
+      font-display: swap;
+      font-style: italic;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-SemiBold';
+      src: url('/fonts/InstrumentSans-Condensed-SemiBold.ttf') format('truetype');
+      font-weight: 600;
+      font-display: swap;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-SemiBoldItalic';
+      src: url('/fonts/InstrumentSans-Condensed-SemiBoldItalic.ttf') format('truetype');
+      font-weight: 600;
+      font-display: swap;
+      font-style: italic;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-Bold';
+      src: url('/fonts/InstrumentSans-Condensed-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'InstrumentSans-Condensed-BoldItalic';
+      src: url('/fonts/InstrumentSans-Condensed-BoldItalic.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+      font-style: italic;
+    } */

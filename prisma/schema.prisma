@@ -1,0 +1,374 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+//COURSES
+model Course {
+  id     String  @id @default(uuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
+  title  String
+  levels Level[]
+  medias Media[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title])
+  @@index([userId])
+}
+
+//Level
+model Level {
+  id        String   @id @default(uuid())
+  name      String
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  medias    Media[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+}
+
+//Media
+model Media {
+  id               String            @id @default(uuid())
+  name             String
+  size             Int
+  format           String
+  url              String
+  type             MediaType
+  courseId         String
+  course           Course            @relation(fields: [courseId], references: [id])
+  levelId          String
+  level            Level             @relation(fields: [levelId], references: [id])
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  plays            Play[]
+  likes            Like[]
+  viewedBy         MediaView[]
+  offlineDownloads OfflineDownload[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([name])
+  @@index([courseId])
+  @@index([levelId])
+  @@index([userId])
+}
+
+// MediaView - New relation model for tracking views
+model MediaView {
+  id       String   @id @default(uuid())
+  mediaId  String
+  media    Media    @relation(fields: [mediaId], references: [id])
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  viewedAt DateTime @default(now())
+
+  @@index([mediaId])
+  @@index([userId])
+}
+
+//Like
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([mediaId])
+  @@index([userId, mediaId])
+}
+
+model LiveClass {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendees LiveClassAttendee[]
+
+  @@index([userId])
+  @@index([id])
+}
+
+// LiveClassAttendee - New relation model for tracking attendees
+model LiveClassAttendee {
+  id          String    @id @default(uuid())
+  liveClassId String
+  liveClass   LiveClass @relation(fields: [liveClassId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  joinedAt    DateTime  @default(now())
+
+  @@index([liveClassId])
+  @@index([userId])
+}
+
+model OfflineDownload {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id])
+  createdAt DateTime @default(now())
+
+  educatorId String
+
+  @@index([userId])
+  @@index([mediaId])
+}
+
+//Play
+model Play {
+  id        String   @id @default(uuid())
+  userId    String
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  durationWatched Float?   // seconds
+  mediaDuration   Float?   // total length of media in seconds
+  createdAt DateTime @default(now())
+   watchRatio      Float?
+
+  educatorId String
+
+  @@index([userId])
+  @@index([mediaId])
+}
+
+//Portal
+model Portal {
+  id          String       @id @default(uuid())
+  desc        String
+  course      String
+  level       String
+  type        MediaType
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  submissions Submission[]
+  openDate    DateTime
+  closeDate   DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+}
+
+model Quiz {
+  id          String           @id @default(uuid())
+  title       String
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  questions   Question[]
+  quizDate    DateTime
+  duration    Int
+  submissions QuizSubmission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+model Question {
+  id             String  @id @default(uuid())
+  quizId         String
+  quiz           Quiz    @relation(fields: [quizId], references: [id])
+  question       String
+  options        Json
+  correctAnswers Json
+  isMultiChoice  Boolean
+
+  @@index([quizId])
+}
+
+model QuizSubmission {
+  id        String   @id @default(uuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  answers   Json
+  createdAt DateTime @default(now())
+
+  educatorId String
+
+  @@index([quizId])
+  @@index([userId])
+}
+
+
+//Subscription
+model Subscription {
+  id           String @id @default(uuid())
+  subscriberId String
+  subscribedId String
+
+  subscriber User @relation("userSubscribers", fields: [subscriberId], references: [id])
+  subscribed User @relation("userSubscriptions", fields: [subscribedId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriberId])
+  @@index([subscribedId])
+}
+
+model SubscriptionPlan {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  price     Float
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Submission {
+  id        String   @id @default(uuid())
+  portalId  String
+  portal    Portal   @relation(fields: [portalId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([portalId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model WebPush {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  pushUrl String @db.LongText()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+//User
+model User {
+  id                  String              @id @default(uuid())
+  fname               String
+  lname               String
+  middlename          String
+  picture             String?
+  email               String              @unique
+  password            String
+  phone               String              @unique
+  school              String
+  isLive              Boolean             @default(false)
+  code                String?
+  role                ROLE
+  courses             Course[]
+  initials            Initial?
+  medias              Media[]
+  mediaView           MediaView[]
+  plays               Play[]
+  likes               Like[]
+  transactions        Transaction[]
+  wallet              Wallet?
+  subscriptions       Subscription[]      @relation("userSubscriptions") // liked user
+  subscribers         Subscription[]      @relation("userSubscribers") // user Likes
+  portals             Portal[]
+  submissions         Submission[]
+  subscriptionPlan    SubscriptionPlan?
+  quizzes             Quiz[]
+  quizSubmissions     QuizSubmission[]
+  liveClasses         LiveClass[]
+  liveclassesAttendee LiveClassAttendee[]
+  offlineDownloads    OfflineDownload[]
+  Session             Session[]
+  push                WebPush[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([email, phone, fname])
+  @@index([school])
+}
+
+model Transaction {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  amount    Int
+  message   String
+  type      PaymentType
+  status    PayoutStatus
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float    @default(0.00)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum Initial {
+  DOCTOR
+  PROFESSOR
+  ASSISTANT_LECTURER
+  LECTURER
+}
+
+enum MediaType {
+  AUDIO
+  VIDEO
+  EBOOK
+}
+
+enum ROLE {
+  STUDENT
+  LECTURER
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  TOPUP
+  PAYOUT
+}
