@@ -1,5 +1,5 @@
 /* public/sw.js */
-const CACHE_NAME = 'media-cache-v1';
+const CACHE_NAME = 'media-cache-v2';
 
 self.addEventListener('push', function (event) {
   if (!event.data) return;
