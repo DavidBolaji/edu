@@ -3,6 +3,7 @@ import db from '@/prisma';
 import { Question, Quiz } from './types';
 import { QuizFormValues } from './_validations/quiz-schema';
 import { getDetails } from '../../_services/user.services';
+import { notifyRecipients } from '@/app/_lib/push';
 
 // export const fetchQuizzes = async () => {
 //   const quiz = await db.quiz.findMany({
@@ -32,9 +33,15 @@ import { getDetails } from '../../_services/user.services';
 
 export const createQuiz = async (data: QuizFormValues) => {
   const user = await getDetails();
-
   const { quizTitle, quizDate, quizDuration, questions, quizTime } = data;
-  await db.quiz.create({
+
+  const payload2 = {
+    title: 'New quiz added',
+    body: `You have successfully created quiz with ${quizTitle}`,
+    url: `/dashboard/host/host`,
+  };
+
+  const quiz = await db.quiz.create({
     data: {
       title: quizTitle,
       userId: user.id, // Replace with actual user ID
@@ -51,11 +58,33 @@ export const createQuiz = async (data: QuizFormValues) => {
       },
     },
   });
+
+  const payload = {
+    title: 'New quiz added',
+    body: `${user.fname} ${user.lname} created quiz for ${quizTitle}, tap to take quiz`,
+    url: `/dashboard/host/take/${quiz.id}_${quiz.userId}`,
+  };
+
+  await Promise.all([notifyRecipients({ type: 'followersOf', ids: [user.id] }, payload),
+  notifyRecipients({ type: "self", ids: [user.id] }, payload2)])
+
 };
 
 export const createQuizSubmission = async (data: any) => {
   const { quizId, answers, educatorId } = data;
   const userId = (await getDetails()).id;
+
+  const payload = {
+    title: 'Quiz Submitted Successfully',
+    body: `You have successfully submitted quiz`,
+    url: `/dashboard/host/quiz/${educatorId}`,
+  };
+
+  const payload2 = {
+    title: 'Quiz Submission',
+    body: `Student has successfully submitted quiz`,
+    url: `/dashboard/host/host`,
+  };
 
   const quiz = await db.quizSubmission.create({
     data: {
@@ -65,6 +94,8 @@ export const createQuizSubmission = async (data: any) => {
       educatorId,
     },
   });
+  await Promise.all([notifyRecipients({ type: 'self', ids: [userId] }, payload),
+  notifyRecipients({ type: "subscribers", ids: [educatorId] }, payload2)])
 
   return quiz;
 };
@@ -86,7 +117,7 @@ export const getQuiz = async (quizId: string) => {
 };
 
 export const getQuizUserSubmission = async (quizId: string, userId: string) => {
-const quiz = await db.quiz.findFirst({
+  const quiz = await db.quiz.findFirst({
     where: {
       id: quizId,
       submissions: {

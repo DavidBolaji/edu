@@ -7,10 +7,24 @@ import { createServerAction } from 'zsa';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { SESSION_COOKIE } from '@/config';
+import { notifyRecipients } from '@/app/_lib/push';
+
 
 export const createPortal = async (data: any) => {
   const { desc, course, level, type, openDate, closeDate } = data;
-  const userId = (await getDetails()).id;
+  const user = (await getDetails());
+
+  const payload = {
+    title: 'New quiz portal added',
+    body: `${user.fname} ${user.lname} created quiz for ${course}`,
+    url: `/dashboard/portal/${user.id}`,
+  };
+
+  const payload2 = {
+    title: 'New quiz portal added',
+    body: `You created quiz for ${course}`,
+    url: `/dashboard/portal/${user.id}`,
+  };
 
   const portal = await db.portal.create({
     data: {
@@ -18,11 +32,14 @@ export const createPortal = async (data: any) => {
       course,
       level,
       type,
-      userId,
+      userId: user.id,
       openDate,
       closeDate,
     },
   });
+
+  await Promise.all([notifyRecipients({ type: 'followersOf', ids: [user.id] }, payload),
+  notifyRecipients({ type: "self", ids: [user.id] }, payload2)])
 
   return portal;
 };
@@ -43,7 +60,7 @@ export const updatePortalAction = createServerAction()
       throw new Error('User not authenticated');
     }
 
-    const session = await validate(sessionId);
+    await validate(sessionId);
 
     try {
       if (!input.id) {

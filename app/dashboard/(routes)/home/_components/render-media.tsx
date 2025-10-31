@@ -1,7 +1,5 @@
 'use client';
-import { sendNotification } from '@/action/action';
-import { Button } from '@/app/_components/ui/button';
-import usePwa from '@/app/_hooks/use-pwa';
+
 import { cn } from '@/app/_lib/utils';
 import { useRouter } from 'next/navigation';
 import React, { startTransition } from 'react';
@@ -54,7 +52,6 @@ const RenderMedia: React.FC<{ media: Record<string, number> }> = ({
   return (
     <div className="grid grid-cols-9 gap-3">
       {renderMedia}
-      {/* <Button onClick={() => sendNotification("hello")}>push</Button> */}
     </div>
   );
 };

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
+import { notifyRecipients } from '@/app/_lib/push';
 
 
 // Do not cache endpoint result
 export const revalidate = 0;
 
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
-  const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+const apiKey = process.env.LIVEKIT_API_KEY;
+const apiSecret = process.env.LIVEKIT_API_SECRET;
+const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
 export async function GET(req: NextRequest) {
   const room = req.nextUrl.searchParams.get('room');
@@ -15,13 +16,19 @@ export async function GET(req: NextRequest) {
   const creator = req.nextUrl.searchParams.get('creator'); // ✅ detect host flag
   const name = req.nextUrl.searchParams.get('name'); // ✅ detect host flag
 
-   if (!room) {
+  const payload = {
+    title: 'Class is Live',
+    body: `Live class is on, tap to join class.`,
+    url: `/dashboard/home/${userId}`,
+  };
+
+  if (!room) {
     return NextResponse.json({ error: 'Missing "room" query parameter' }, { status: 400 });
   } else if (!userId) {
     return NextResponse.json({ error: 'Missing "username" query parameter' }, { status: 400 });
   }
 
-   if (!apiKey || !apiSecret || !wsUrl) {
+  if (!apiKey || !apiSecret || !wsUrl) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
@@ -39,6 +46,8 @@ export async function GET(req: NextRequest) {
     canPublish: true,
     canSubscribe: true,
   });
+
+  await Promise.all([notifyRecipients({ type: 'followersOf', ids: [userId] }, payload)])
 
   return NextResponse.json({
     token: await at.toJwt()

@@ -61,7 +61,7 @@ export const DashboardHeader: React.FC<{
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div
-            className="bg-[#F1F5F7] absolute left-0 top-[9.6%] w-full mt-2 h-[91.5%] z-[9999]"
+            className="bg-blue-700 absolute left-0 top-[9.6%] w-full mt-2 h-[91.5%] z-[9999]"
             initial={{
               x: -700,
             }}
@@ -74,9 +74,9 @@ export const DashboardHeader: React.FC<{
               x: -700,
             }}
           >
-            <div className="flex justify-end items-center">
+            <div className="flex px-4 justify-center items-center">
               <div
-                className="absolute bottom-6 px-5 -translate-x-2 cursor-pointer gap-3 font-bold font-onest pl-12 flex items-center red-100 text-white"
+                className="flex gap-3 items-center border-white w-full border-b justify-center cursor-default text-white"
                 onClick={handleLogout}
               >
                 <LogOut size={16} />
