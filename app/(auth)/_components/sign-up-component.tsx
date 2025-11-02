@@ -8,6 +8,7 @@ import { useMultiStep } from '@/app/_hooks/use-multiple-step';
 import SignUpOneForm from '../_forms/sign-up-one-form';
 import SignUpTwoForm from '../_forms/sign-up-two-form';
 import SignUpThreeForm from '../_forms/sign-up-three-form';
+import Link from 'next/link';
 
 const SignUpComponent = () => {
   const { currentStep, nextStep, prevStep } = useMultiStep(3);
@@ -18,11 +19,18 @@ const SignUpComponent = () => {
   ];
 
   return (
-    <AnimatePresence mode="wait">
-      <div className="w-full max-w-md h-[90vh] scrollbar-hide overflow-auto mx-auto pb-28">
-        <Steper step={currentStep} steps={steps} />
+    <>
+      <AnimatePresence mode="wait">
+        <div className="w-full max-w-md h-screen scrollbar-hide overflow-auto mx-auto pb-28">
+          <Steper step={currentStep} steps={steps} />
+        </div>
+      </AnimatePresence>
+      <div className="w-full text-center bg-primary items-center mt">
+        <p className="text-white italic">
+          Have an account already? <Link href={'/sign-in'}>Login</Link>
+        </p>
       </div>
-    </AnimatePresence>
+    </>
   );
 };
 

@@ -13,6 +13,7 @@ import { MediasContextProvider } from './(routes)/courses/[courseId]/[levelId]/_
 import { MediaDialogs } from './(routes)/courses/[courseId]/[levelId]/_components/media-dialogs';
 import { MediaViewerModal } from './(routes)/courses/[courseId]/[levelId]/_components/media-viewer-modal';
 import SetupNotification from '../_components/setup-notification';
+import BrowserSupportCheck from '../_components/browser-support';
 
 const Dashboardlayout: React.FC<PropsWithChildren> = async ({ children }) => {
   const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -44,6 +45,7 @@ const Dashboardlayout: React.FC<PropsWithChildren> = async ({ children }) => {
               }}
               className={`overflow-auto scrollbar-hide`}
             >
+              <BrowserSupportCheck />
               {children}
             </Content>
             <Tab role={user.role} />

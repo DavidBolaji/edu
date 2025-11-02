@@ -38,7 +38,7 @@ const FormikSelectInput = ({
     <div>
       {label ? (
         <Label
-          className="text-[#141923] ml-0.5 font-instrument font-semibold text-base mb-2 inline-block"
+          className="text-white ml-0.5 font-instrument font-semibold text-base mb-2 inline-block"
           htmlFor={name}
         >
           {label}

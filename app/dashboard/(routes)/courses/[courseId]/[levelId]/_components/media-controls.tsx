@@ -81,10 +81,10 @@ export function MediaControls({
         >
           <Repeat className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={handleMinimize} className="hover:bg-muted">
+        {/* <Button variant="ghost" size="icon" onClick={handleMinimize} className="hover:bg-muted">
           <Minimize className="h-5 w-5" />
           <span className="sr-only">Minimize</span>
-        </Button>
+        </Button> */}
       </div>
 
       {/* Transport */}

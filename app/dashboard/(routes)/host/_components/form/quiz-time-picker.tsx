@@ -40,8 +40,8 @@ const QuizTimePicker: React.FC<QuizTimePickerProps> = ({
         timeCaption="Time"
         dateFormat="h:mm aa"
         placeholderText="Select time"
-        minTime={isToday ? now : new Date(0, 0, 0, 0, 0)} // disables past times if today
-        maxTime={new Date(0, 0, 0, 23, 45)} // allows selection up to 11:45 PM
+        // minTime={isToday ? now : new Date(0, 0, 0, 0, 0)} // disables past times if today
+        // maxTime={new Date(0, 0, 0, 23, 45)} // allows selection up to 11:45 PM
         className="w-full border border-gray-300 px-3 py-2 rounded-md text-black"
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}

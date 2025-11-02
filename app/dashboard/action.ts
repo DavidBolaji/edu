@@ -11,6 +11,7 @@ import { redirect } from 'next/navigation';
 import { validate } from './_services/user.services';
 import _ from 'lodash';
 import { UserMedia } from './(routes)/home/[id]/_data/schema';
+import { notifyRecipients } from '../_lib/push';
 
 function presenter(media: Media[]): Record<string, number> {
   const expectedTypes: MediaType[] = ['AUDIO', 'VIDEO', 'EBOOK'];
@@ -157,6 +158,16 @@ export async function getUnviewedMediaOnly(): Promise<{
   } catch (error) {
     throw error;
   }
+}
+
+export const handleTest = async (user: any) => {
+  const payload = {
+    title: 'New quiz portal added',
+    body: `${user.fname} ${user.lname} created push`,
+    url: `/dashboard/portal/${user.id}`,
+  };
+  console.log(payload)
+  await notifyRecipients({ type: "followersOf", ids: [user.id] }, payload)
 }
 
 export const reload = (path: string) => {

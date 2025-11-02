@@ -12,6 +12,7 @@ import {
 } from '@/src/entities/models/auth/login-schema';
 import { toast } from 'sonner';
 import { signIn } from '../action';
+import Link from 'next/link';
 
 const SignInForm = () => {
   const onSubmit = async (
@@ -52,6 +53,12 @@ const SignInForm = () => {
           >
             {isSubmitting ? <Spinner /> : 'Sign In'}
           </Button>
+          <div className='mt-2 border border-b-2 border-transparent' />
+          <div className="w-full text-center items-center mt-3">
+            <p className="text-white italic">
+              Don&apos;t have an account? <Link href={'/sign-up'}>Register</Link>
+            </p>
+          </div>
         </Form>
       )}
     </Formik>

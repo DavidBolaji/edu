@@ -95,73 +95,76 @@ export function MediaViewerModal() {
             {isAudioOrVideo && currentRow?.url && (
               <>
                 {viewerType === "audio" ? (
-                  <audio
-                    ref={mediaRef}
-                    src={currentRow.url}
-                    className="mt-2 w-full"
-                    onLoadedMetadata={handleMediaLoad}
-                    controls={false}
-                  />
+                  <>
+                    <audio
+                      ref={mediaRef}
+                      src={currentRow.url}
+                      className="mt-2 w-full"
+                      onLoadedMetadata={handleMediaLoad}
+                      controls={false}
+                    />
+                    {/* Artwork - only for audio/video */}
+                    <div className="mx-auto grid w-full place-items-center gap-4">
+                      <div
+                        className={cn(
+                          "relative h-36 w-36 overflow-hidden rounded-full bg-gradient-to-br from-purple-100 to-rose-100 shadow",
+                          isPlaying && "animate-spin",
+                        )}
+                        aria-hidden
+                      >
+                        <Image
+                          src={coverUrl || "/images/disc.png"}
+                          alt="Album art"
+                          fill
+                          sizes="144px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      {/* Track meta */}
+                      <div className="flex flex-col items-center gap-1 text-center">
+                        <h2 className="line-clamp-1 text-lg font-semibold">{currentRow?.name || "Unknown Title"}</h2>
+                        <p className="text-sm text-muted-foreground">Unknown Album</p>
+                        <p className="text-xs text-muted-foreground">
+                          {currentRow?.createdAt
+                            ? format(
+                              typeof currentRow.createdAt === "string"
+                                ? new Date(currentRow.createdAt)
+                                : (currentRow.createdAt as Date),
+                              "do MMM",
+                            )
+                            : "Unknown Year"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Controls - only for audio/video */}
+                    <MediaControls
+                      isPlaying={isPlaying}
+                      isRepeating={isRepeating}
+                      currentTime={currentTime}
+                      duration={duration}
+                      onPlayPause={togglePlayPause}
+                      onRepeatToggle={toggleRepeat}
+                      onDownload={() => downloadMedia(currentRow.url, currentRow.name)}
+                      onSeek={seek}
+                      onNext={nextTrack}
+                      onPrevious={previousTrack}
+                      onFullscreen={toggleFullscreen}
+                      className="pt-2"
+                    />
+                  </>
                 ) : (
                   <video
                     ref={mediaRef}
                     src={currentRow.url}
                     className="mt-2 max-h-[420px] w-full rounded"
                     onLoadedMetadata={handleMediaLoad}
-                    controls={false}
+                    controls={true}
                   />
                 )}
 
-                {/* Artwork - only for audio/video */}
-                <div className="mx-auto grid w-full place-items-center gap-4">
-                  <div
-                    className={cn(
-                      "relative h-36 w-36 overflow-hidden rounded-full bg-gradient-to-br from-purple-100 to-rose-100 shadow",
-                      isPlaying && "animate-spin",
-                    )}
-                    aria-hidden
-                  >
-                    <Image
-                      src={coverUrl || "/placeholder.svg"}
-                      alt="Album art"
-                      fill
-                      sizes="144px"
-                      className="object-cover"
-                    />
-                  </div>
 
-                  {/* Track meta */}
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <h2 className="line-clamp-1 text-lg font-semibold">{currentRow?.name || "Unknown Title"}</h2>
-                    <p className="text-sm text-muted-foreground">Unknown Album</p>
-                    <p className="text-xs text-muted-foreground">
-                      {currentRow?.createdAt
-                        ? format(
-                          typeof currentRow.createdAt === "string"
-                            ? new Date(currentRow.createdAt)
-                            : (currentRow.createdAt as Date),
-                          "do MMM",
-                        )
-                        : "Unknown Year"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Controls - only for audio/video */}
-                <MediaControls
-                  isPlaying={isPlaying}
-                  isRepeating={isRepeating}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onPlayPause={togglePlayPause}
-                  onRepeatToggle={toggleRepeat}
-                  onDownload={() => downloadMedia(currentRow.url, currentRow.name)}
-                  onSeek={seek}
-                  onNext={nextTrack}
-                  onPrevious={previousTrack}
-                  onFullscreen={toggleFullscreen}
-                  className="pt-2"
-                />
               </>
             )}
           </div>

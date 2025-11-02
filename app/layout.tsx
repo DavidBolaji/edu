@@ -12,7 +12,7 @@ const defaultUrl =
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: 'Edutainment',
+  title: 'Mobile classroom',
   description: 'Educational entertainment at its best',
   icons: {
     icon: [{ url: '/icons/icon.png', sizes: '196x196', type: 'image/png' }],

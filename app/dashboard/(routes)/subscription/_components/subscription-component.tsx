@@ -164,7 +164,7 @@ export default function SubscriptionComponent({
                 className={`text-sm mt-2 ${isSelected ? 'text-white' : 'text-gray-500'
                   }`}
               >
-                Enjoy complete access to Edutainment features for{' '}
+                Enjoy complete access to Mobile Classroom features for{' '}
                 {isFree ? 'Unlimited time' : option.label.toLowerCase()}.
               </p>
 

@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Edutainment',
-    short_name: 'Edutainment',
+    name: 'Mobile Classroom',
+    short_name: 'Mobile Classroom',
     description: 'Educational entertainment at its best', // Fixed typo
     start_url: '/',
     display: 'standalone',

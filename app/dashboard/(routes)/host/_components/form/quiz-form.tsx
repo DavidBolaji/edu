@@ -55,7 +55,7 @@ export const QuizForm = ({ submited }: { submited: boolean }) => {
           />
 
           <QuizDurationInput
-            value={formik.values.quizDuration as unknown as string}
+            value={formik.values.quizDuration > 0 ? String(formik.values.quizDuration) : ""}
             onChange={formik.handleChange('quizDuration')}
           // error={formik.errors.quizDuration}
           />

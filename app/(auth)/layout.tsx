@@ -9,7 +9,7 @@ const Authlayout: React.FC<PropsWithChildren> = async ({ children }) => {
   if (sessionId) {
     return redirect('/dashboard/home');
   }
-  return <div className="bg-primary md:px-0 px-4">{children}</div>;
+  return <div className="bg-primary md:px-0 px-4 h-screen">{children}</div>;
 };
 
 export default Authlayout;

@@ -22,7 +22,7 @@ export const useQuizForm = () => {
     ],
     quizDate: new Date(),
     quizTime: new Date(),
-    quizDuration: 10,
+    quizDuration: 0,
   });
   const [loading, setLoading] = useState(false);
 

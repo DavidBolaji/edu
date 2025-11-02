@@ -1063,7 +1063,7 @@ export default function CustomConference({
       <div className="px-6 py-4">
         <div className="flex items-center text-wrap justify-between max-w-7xl mx-auto">
           {/* Left side - Audio Visualizer - Fixed width to prevent movement */}
-          <div className="flex items-center gap-3 text-sm text-gray-400 w-48">
+          <div className="hidden md:flex items-center gap-3 text-sm text-gray-400 w-48">
             <div className="hidden md:flex items-center gap-2">
               {localParticipant && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 rounded-lg">
@@ -1076,9 +1076,7 @@ export default function CustomConference({
           </div>
 
           {/* Center - Main controls */}
-          <div className="flex flex-wrap justify-center items-center gap-2 
-                scale-75 -translate-x-20 
-                md:scale-100 md:translate-x-0">
+          <div className="flex flex-wrap justify-center items-center gap-2 w-full mx-auto bg-black">
             {/* Audio with dropdown */}
             <div className="relative" ref={micMenuRef}>
               <div className="flex">

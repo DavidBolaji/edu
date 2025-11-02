@@ -10,7 +10,7 @@ import {
 import { OfflineMedia } from '../_data/schema';
 import { openDatabase } from '@/app/_lib/indexed-db';
 
-const CACHE_NAME = 'media-cache-v1';
+const CACHE_NAME = 'media-cache-v3';
 
 type ViewerType = 'audio' | 'video' | 'ebook' | null;
 type OfflineDialogType = 'viewer';

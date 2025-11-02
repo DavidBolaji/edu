@@ -9,6 +9,7 @@ import { v4 as uuid } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useCreatorActions } from '../../room/[roomId]/_hooks/use-creator-action';
 import { Button } from '@/app/_components/ui/button';
+import { handleTest } from '@/app/dashboard/action';
 
 const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
   const router = useRouter();
@@ -94,6 +95,12 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
       })
     }
   };
+
+  // const handlePush = async () => {
+  //   console.log("CALLED")
+  //  await handleTest(user)
+  // }
+
   return (
     <div className="w-full">
       {/* <ProfileDrawer /> */}
@@ -128,6 +135,11 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
                   Analytics
                 </Button>
               </div>
+              {/* <div className="">
+                <Button className="w-24" onClick={handlePush}>
+                  push
+                </Button>
+              </div> */}
               {/* <div className="pl-1.5 w-1/2"><SubmissionPortal /></div> */}
             </div>
           </div>
