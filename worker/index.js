@@ -1,6 +1,6 @@
 // public/sw.js - Main service worker file
 
-const CACHE_NAME = 'media-cache-v3';
+const CACHE_NAME = 'media-cache-v4';
 const OFFLINE_URL = '/offline.html';
 
 // Install event - cache critical assets
