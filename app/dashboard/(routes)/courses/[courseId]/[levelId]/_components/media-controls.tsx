@@ -46,10 +46,10 @@ export function MediaControls({
   const hasNext = playlist.length > 1
   const hasPrevious = playlist.length > 1
 
-  const handleMinimize = () => {
-    setIsMinimized(true)
-    setOpen(null)
-  }
+  // const handleMinimize = () => {
+  //   setIsMinimized(true)
+  //   setOpen(null)
+  // }
 
   return (
     <div className={cn("flex w-full flex-col items-center gap-6", className)}>

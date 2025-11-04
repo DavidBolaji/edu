@@ -46,7 +46,7 @@ export function OfflineViewerModal() {
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !val && close()}>
       <DialogTitle className="hidden">{currentRow?.fileName}</DialogTitle>
-      <DialogContent className="max-w-3xl w-full max-h-56 p-0 overflow-scroll">
+      <DialogContent className="max-w-3xl w-full p-0 overflow-scroll">
         <div className="relative bg-white rounded-lg w-full h-full p-4">
           <DialogClose className="absolute top-2 w-12 h-12 bg-white right-2 p-2 text-muted-foreground hover:text-foreground">
             {/* <XIcon className="h-4 w-4" /> */}

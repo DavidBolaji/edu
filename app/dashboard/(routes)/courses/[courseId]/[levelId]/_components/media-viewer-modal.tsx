@@ -10,7 +10,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/app/_componen
 import { Button } from "@/app/_components/ui/button"
 import { cn } from "@/app/_lib/utils"
 import { MediaControls } from "./media-controls"
-import { MiniPlayer } from "./media-mini-player"
+// import { MiniPlayer } from "./media-mini-player"
 
 export function MediaViewerModal() {
   const { currentRow, viewerType, open, setOpen, isMinimized } = useMediaContext()
@@ -42,17 +42,22 @@ export function MediaViewerModal() {
     setIsLoading(false)
   }
 
-  const close = () => setOpen(null)
+  const close = () =>{ 
+    if(viewerType === "audio") {
+      togglePlayPause();
+    }
+    setOpen(null)
+  }
 
   const coverUrl = useMemo(() => {
     const anyRow = currentRow as any
-    return anyRow?.coverUrl || anyRow?.imageUrl || anyRow?.thumbnailUrl || "/images/disk-placeholder.png"
+    return anyRow?.coverUrl || anyRow?.imageUrl || anyRow?.thumbnailUrl || "/images/disc.png"
   }, [currentRow])
 
   const isAudioOrVideo = viewerType === "audio" || viewerType === "video"
-
+// isMinimized ? <MiniPlayer /> :
   return (
-    isMinimized ? <MiniPlayer /> : <Dialog open={isOpen} onOpenChange={(val) => !val && close()}>
+     <Dialog open={isOpen} onOpenChange={(val) => !val && close()}>
       <DialogTitle className="hidden">{currentRow?.name ?? "Media Viewer"}</DialogTitle>
       <DialogContent className="w-full max-w-3xl overflow-hidden p-0">
         <div className="relative w-full bg-white">
@@ -60,6 +65,7 @@ export function MediaViewerModal() {
             <Button
               variant="ghost"
               size="icon"
+             
               className="absolute right-2 top-2 z-20 bg-white text-muted-foreground hover:text-foreground"
             >
               <XIcon className="h-4 w-4" />
@@ -163,8 +169,6 @@ export function MediaViewerModal() {
                     controls={true}
                   />
                 )}
-
-
               </>
             )}
           </div>

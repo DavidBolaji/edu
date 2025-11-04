@@ -42,7 +42,8 @@ export function useMediaControls() {
       }
 
       // Create new element
-      element = viewerType === "audio" ? document.createElement("audio") : document.createElement("video")
+      // element = viewerType === "audio" ? document.createElement("audio") : document.createElement("video")
+      element = document.createElement("audio")
 
       // Hide the element since it's just for playback control
       element.style.display = "none"
