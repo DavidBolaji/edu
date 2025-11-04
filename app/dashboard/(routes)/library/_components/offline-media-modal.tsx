@@ -40,6 +40,9 @@ export function OfflineViewerModal() {
   };
 
   const close = () => {
+    if (viewerType === "audio") {
+      togglePlayPause();
+    }
     setOpen(null);
   };
 
