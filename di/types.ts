@@ -29,6 +29,7 @@ import { ISubscribeToPushNotificationController } from '@/src/controllers/subscr
 import { IGetTutorsForUserController } from '@/src/controllers/tutor/get-tutors-for-user.controller';
 import { IGetDetailsForUserController } from '@/src/controllers/users/get-details-for-user.controller';
 import { IGetSingleUserController } from '@/src/controllers/users/get-single-user.controller';
+import { IMediaPlayer, IPlaybackStateManager, IPlaybackPersistence, IStateSynchronization, IMediaUIController } from '@/src/entities/models/media-player';
 
 export const DI_SYMBOLS = {
   // services
@@ -77,6 +78,13 @@ export const DI_SYMBOLS = {
   ISubscriptionRepository: Symbol.for('ISubscriptionRepository'),
   ITutorRepository: Symbol.for('ITutorRepository'),
   IWalletRepository: Symbol.for('IWalletRepository'),
+
+  // media player services
+  IMediaPlayer: Symbol.for('IMediaPlayer'),
+  IPlaybackStateManager: Symbol.for('IPlaybackStateManager'),
+  IPlaybackPersistence: Symbol.for('IPlaybackPersistence'),
+  IStateSynchronization: Symbol.for('IStateSynchronization'),
+  IMediaUIController: Symbol.for('IMediaUIController'),
 };
 
 export interface DI_RETURN_TYPES {
@@ -116,4 +124,11 @@ export interface DI_RETURN_TYPES {
   ISubscriptionRepository: ISubscriptionRepository;
   ITutorRepository: ITutorRepository;
   IWalletRepository: IWalletRepository;
+
+  // Media Player Services
+  IMediaPlayer: IMediaPlayer;
+  IPlaybackStateManager: IPlaybackStateManager;
+  IPlaybackPersistence: IPlaybackPersistence;
+  IStateSynchronization: IStateSynchronization;
+  IMediaUIController: IMediaUIController;
 }

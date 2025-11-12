@@ -13,7 +13,7 @@ import { MediaControls } from "./media-controls"
 // import { MiniPlayer } from "./media-mini-player"
 
 export function MediaViewerModal() {
-  const { currentRow, viewerType, open, setOpen, isMinimized } = useMediaContext()
+  const { currentRow, viewerType, open, setOpen, isMinimized, cleanupMedia } = useMediaContext()
   const [isLoading, setIsLoading] = useState(true)
 
   const {
@@ -36,17 +36,24 @@ export function MediaViewerModal() {
   // Reset loading whenever we switch items or open viewer
   useEffect(() => {
     if (isOpen) setIsLoading(true)
+    
+    // For audio, set loading to false after a short delay since we don't have a load event
+    if (isOpen && viewerType === "audio") {
+      const timer = setTimeout(() => setIsLoading(false), 500)
+      return () => clearTimeout(timer)
+    }
   }, [isOpen, currentRow?.id, viewerType])
 
   const handleMediaLoad = () => {
     setIsLoading(false)
   }
 
-  const close = () =>{ 
-    if(viewerType === "audio") {
-      togglePlayPause();
-    }
+  const close = () => { 
     setOpen(null)
+    // Clean up media resources when closing (no delay needed)
+    if (!isMinimized) {
+      cleanupMedia()
+    }
   }
 
   const coverUrl = useMemo(() => {
@@ -102,13 +109,7 @@ export function MediaViewerModal() {
               <>
                 {viewerType === "audio" ? (
                   <>
-                    <audio
-                      ref={mediaRef}
-                      src={currentRow.url}
-                      className="mt-2 w-full"
-                      onLoadedMetadata={handleMediaLoad}
-                      controls={false}
-                    />
+                    {/* No audio element needed - AudioManager handles the global element */}
                     {/* Artwork - only for audio/video */}
                     <div className="mx-auto grid w-full place-items-center gap-4">
                       <div

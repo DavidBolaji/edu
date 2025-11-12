@@ -14,7 +14,7 @@ function presenter(user: ReturnUserDetail, wallet: Wallet): UserDetail {
     fname: user.fname,
     lname: user.lname,
     email: user.email,
-    initials: user.initials,
+    title: user.title,
     picture: user.picture,
     phone: user.phone,
     role: user.role,

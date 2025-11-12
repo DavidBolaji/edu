@@ -144,6 +144,7 @@ export class UsersRepository implements IUsersRepository {
           phone: input.phone,
           role: input.role,
           school: input.school,
+          title: input.title,
         },
         select: {
           id: true,

@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useState, useEffect, useCallback } from 'react';
 import { Media } from '../_data/schema';
+import { AudioManagerService } from '@/src/application/services/audio-manager.service';
 
 type ViewerType = 'audio' | 'video' | 'ebook' | null;
 type MediasDialogType = 'add' | 'edit' | 'delete' | 'viewer';
@@ -21,6 +22,7 @@ interface MediasContextType {
   setIsMinimized: React.Dispatch<React.SetStateAction<boolean>>
   isFullscreen: boolean
   setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>
+  cleanupMedia: () => void;
 }
 
 const MediaContext = createContext<MediasContextType | null>(null);
@@ -36,6 +38,25 @@ export const MediasContextProvider: React.FC<PropsWithChildren> = ({
   const [isMinimized, setIsMinimized] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // Function to cleanup media
+  const cleanupMedia = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const audioManager = AudioManagerService.getInstance()
+      audioManager.pauseAllAudio()
+      audioManager.cleanup()
+    }
+    setCurrentRow(null)
+    setViewerType(null)
+    setIsMinimized(false)
+  }, [])
+
+  // Cleanup media when component unmounts or when switching away from media
+  useEffect(() => {
+    return () => {
+      cleanupMedia()
+    }
+  }, [cleanupMedia])
+
   const values = {
     open,
     setOpen,
@@ -50,7 +71,8 @@ export const MediasContextProvider: React.FC<PropsWithChildren> = ({
     isMinimized,
     setIsMinimized,
     isFullscreen,
-    setIsFullscreen
+    setIsFullscreen,
+    cleanupMedia
   };
   return (
     <MediaContext.Provider value={values}>{children}</MediaContext.Provider>

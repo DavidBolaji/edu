@@ -29,7 +29,7 @@ export interface UserDetail {
   fname: string;
   lname: string;
   email: string;
-  initials: string | null;
+  title: string | null;
   picture: string | null;
   phone: string;
   role: ROLE;

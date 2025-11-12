@@ -35,17 +35,16 @@ export const signUpUseCase =
     try {
       const newUser = await usersRepository.createUser({
         ...input,
-        password: hashed_password,
-      });
+        password: hashed_password
+      }, tx);
+
+      // Create wallet synchronously within the transaction for data consistency
+      await walletRepository.createWallet(newUser.id, tx);
 
       const { cookie, session } = await authenticationService.createSession(
         newUser
       );
 
-      await Promise.all([
-        // Create Wallet
-        walletRepository.createWallet(newUser.id, tx),
-      ]);
 
       return {
         cookie,

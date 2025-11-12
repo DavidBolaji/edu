@@ -4,7 +4,7 @@ import { mergeTypes, z } from 'zod';
 // Personal Information Schema One
 //------------------------------------------------------------------------------
 export const signUpOneSchema = z.object({
-  initials: z.string().min(1, { message: 'Initials is required' }),
+  title: z.enum(['Mr', 'Mrs', 'Ms', 'Dr', 'Professor'], { message: 'Title is required' }),
   fname: z.string().min(1, { message: 'First name field is required' }),
   middlename: z.string().min(1, { message: 'Middle name field is required' }),
   lname: z.string().min(1, { message: 'Last name field is required' }),

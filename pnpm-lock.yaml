@@ -89,6 +89,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vercel/functions':
+        specifier: ^3.3.0
+        version: 3.3.0
       '@zegocloud/zego-uikit-prebuilt':
         specifier: ^2.14.3-beta
         version: 2.17.0
@@ -1956,6 +1959,19 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
+
+  '@vercel/functions@3.3.0':
+    resolution: {integrity: sha512-u5UrM2BX7gdMMXaJph3ZxgjAczv5/3oCG4H37BcnDDiXO7hJnN9C7pNX1v4mSmMLQ22n44C2bqN0d87lxfxYXQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+
+  '@vercel/oidc@3.0.3':
+    resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
+    engines: {node: '>= 20'}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -6718,6 +6734,12 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
+
+  '@vercel/functions@3.3.0':
+    dependencies:
+      '@vercel/oidc': 3.0.3
+
+  '@vercel/oidc@3.0.3': {}
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:

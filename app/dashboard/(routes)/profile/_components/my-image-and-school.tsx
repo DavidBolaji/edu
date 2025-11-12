@@ -94,8 +94,7 @@ const MyImageAndSchool: React.FC<{ user: UserDetail; edit?: boolean }> = ({
       </div>
 
       <h2 className="text-xl font-bold mt-4 w-full flex items-center justify-center">
-        {user?.initials || 'Mr '}
-        {user?.fname} {user?.lname}
+        {user?.title || 'Mr'} {user?.fname} {user?.lname}
       </h2>
 
       <h2 className="text-sm text-gray-700 w-full text-center my-1 flex justify-center items-center ">

@@ -4,6 +4,7 @@ import { TanstackProvider } from '@/tanstack/tanstack-provider';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Toaster } from 'sonner';
 import Progress from './_components/progress';
+import { MediaPlayerProvider } from './_contexts/media-player-provider';
 
 const defaultUrl =
   process.env.NEXT_PUBLIC_ENV === 'prod'
@@ -213,9 +214,15 @@ export default function RootLayout({
       <body>
         <AntdRegistry>
           <TanstackProvider>
-            <Progress />
-            <Toaster />
-            {children}
+            <MediaPlayerProvider
+              enablePersistence={true}
+              enableCrossTabSync={true}
+              autoSaveInterval={5000}
+            >
+              <Progress />
+              <Toaster />
+              {children}
+            </MediaPlayerProvider>
           </TanstackProvider>
         </AntdRegistry>
       </body>

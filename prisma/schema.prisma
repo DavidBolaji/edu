@@ -293,8 +293,8 @@ model User {
   isLive              Boolean             @default(false)
   code                String?
   role                ROLE
+  title               UserTitle?
   courses             Course[]
-  initials            Initial?
   medias              Media[]
   mediaView           MediaView[]
   plays               Play[]
@@ -344,11 +344,12 @@ model Wallet {
   @@index([userId])
 }
 
-enum Initial {
-  DOCTOR
-  PROFESSOR
-  ASSISTANT_LECTURER
-  LECTURER
+enum UserTitle {
+  Mr
+  Mrs
+  Ms
+  Dr
+  Professor
 }
 
 enum MediaType {

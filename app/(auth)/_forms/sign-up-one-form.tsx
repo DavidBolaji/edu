@@ -12,7 +12,7 @@ import {
   SignUpOneSchemaType,
 } from '@/src/entities/models/auth/sign-up-schema';
 import FormikSelectInput from '@/app/_components/inputs/formik-select-input';
-import { initials, schoolList } from '@/app/_lib/data';
+import { titleOptions } from '@/app/_lib/data';
 
 const SignUpOneForm: React.FC<{ nextStep?: () => void }> = ({ nextStep }) => {
   const { insert, getSignUpData } = useSignUp();
@@ -25,7 +25,7 @@ const SignUpOneForm: React.FC<{ nextStep?: () => void }> = ({ nextStep }) => {
   return (
     <Formik
       initialValues={getSignUpData<SignUpOneSchemaType>([
-        'initials',
+        'title',
         'fname',
         'middlename',
         'lname',
@@ -37,10 +37,10 @@ const SignUpOneForm: React.FC<{ nextStep?: () => void }> = ({ nextStep }) => {
       {({ isSubmitting, handleSubmit, isValid }) => (
         <Form onSubmit={handleSubmit} className="space-y-8 w-full">
           <FormikSelectInput
-            label="Initials"
-            name="initials"
-            placeholder="Select Initial"
-            options={initials || []}
+            label="Title"
+            name="title"
+            placeholder="Select Title"
+            options={titleOptions || []}
           />
           <FormikInput label="First Name" name="fname" type="text" />
           <FormikInput label="Middle Name" name="middlename" type="text" />
