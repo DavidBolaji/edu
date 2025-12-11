@@ -170,13 +170,6 @@ export function LibraryTableRowActions({ row, allMedia = [], onCacheCleared }: D
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[180px]">
-          <DropdownMenuItem onClick={handlePlayOfflineMedia}>
-            View
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem 
             onClick={handleClearFromCache}
             disabled={isDeleting}

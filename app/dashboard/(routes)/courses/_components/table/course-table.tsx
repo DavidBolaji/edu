@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/app/_components/ui/table';
+import { useRouter } from 'next/navigation';
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -45,6 +46,20 @@ export function CourseTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const router = useRouter();
+
+  const handleRowClick = (course: Course, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    // Navigate to course levels page
+    startTransition(() => {
+      router.push(`/dashboard/courses/${course.id}`);
+    });
+  };
 
   const table = useReactTable({
     data,
@@ -101,7 +116,8 @@ export function CourseTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

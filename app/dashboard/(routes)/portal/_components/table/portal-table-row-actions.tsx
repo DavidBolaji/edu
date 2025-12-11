@@ -63,24 +63,6 @@ export function PortalTableRowActions({ row }: DataTableRowActionsProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
-              // start showing the loading bar
-              ; (window as any).__showTopProgress?.()
-                ; (window as any).__showOverlayLoading?.()
-              // perform the navigation
-              startTransition(() => {
-
-                router.push(`/dashboard/portal/submissions/${row.original.id}`);
-              })
-            }}
-            className="text-red-500!"
-          >
-            View
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
               const copyRoomLink = async () => {
                 const roomUrl = `${window.location.origin}/dashboard/portal/${user?.id}`;
                 try {
@@ -92,9 +74,8 @@ export function PortalTableRowActions({ row }: DataTableRowActionsProps) {
               };
               copyRoomLink()
             }}
-            className="text-red-500!"
           >
-            Copy
+            Copy Link
             <DropdownMenuShortcut>
               <ViewIcon size={16} />
             </DropdownMenuShortcut>

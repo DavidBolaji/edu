@@ -7,8 +7,7 @@ import { handleSearch } from '@/app/dashboard/action';
 import { User } from '@prisma/client';
 import { Empty } from 'antd';
 import { Loader2, Eye, UserCheck, UserPlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import React, { startTransition, useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 const RenderTutors: React.FC<{ tutors: any; subscriptions: string[] }> = ({
@@ -17,14 +16,13 @@ const RenderTutors: React.FC<{ tutors: any; subscriptions: string[] }> = ({
 }) => {
   const [id, setId] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleView = (id: string) => {
     (window as any).__showTopProgress?.();
     (window as any).__showOverlayLoading?.();
-    startTransition(() => {
-      router.push(`/dashboard/home/${id}`);
-    });
+    
+    // Use window navigation with force reload
+    window.location.href = `/dashboard/home/${id}`;
   };
 
   const handleSubscribe = async (tutorId: string, isSubscribed: boolean) => {

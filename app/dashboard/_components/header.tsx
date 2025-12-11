@@ -1,7 +1,5 @@
 'use client';
 
-// import { LOGO_URL } from '@/config';
-import { Header } from 'antd/es/layout/layout';
 import Image from 'next/image';
 import AvatarComponent from './avatar-component';
 import { LogOut, MenuIcon, XIcon } from 'lucide-react';
@@ -33,59 +31,94 @@ export const DashboardHeader: React.FC<{
   };
 
   return (
-    <Header
-      style={{
-        paddingLeft: 0,
-        paddingRight: '40px',
-        background: '#fff',
-        height: 72,
-        borderBottom: '1px solid #DDEEE5',
-      }}
-    >
-      <div className="justify-between items-center w-full space-x-4 h-full hidden px-4">
-        <Image width={90} height={40} src={'/logo.png'} alt="Edutainment logo" />
-      </div>
-      <div className="flex justify-end items-center w-full space-x-4 h-full">
-        <div className="items-center gap-x-2 md:flex hidden">
-          <AvatarComponent name={name} src={src} />
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 h-16 px-4 lg:px-6" style={{ overflow: 'visible', position: 'sticky' }}>
+      <div className="flex items-center justify-between h-full">
+        {/* Logo - Visible on mobile only */}
+        <div className="flex items-center lg:hidden">
+          <Image 
+            width={90} 
+            height={40} 
+            src="/logo.png" 
+            alt="Edutainment logo"
+            className="object-contain"
+          />
         </div>
-        <div
-          onClick={handleMenuClick}
-          className="cursor-pointer relative z-50 block lg:hidden"
-        >
-          <div className="z-50 -transl">
-            {visible ? <XIcon color="black" /> : <MenuIcon color="black" />}
+
+        {/* Desktop: Empty space to push avatar to right */}
+        <div className="hidden lg:block flex-1"></div>
+
+        {/* Right side - User info and mobile menu */}
+        <div className="flex items-center space-x-4">
+          {/* User Avatar - Visible on desktop */}
+          <div className="hidden lg:flex items-center gap-x-2">
+            <AvatarComponent name={name} src={src} />
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={handleMenuClick}
+            className="lg:hidden relative z-50 p-2 rounded-md hover:bg-gray-100 transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            {visible ? <XIcon size={24} /> : <MenuIcon size={24} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div
-            className="bg-blue-700 absolute left-0 top-[9.6%] w-full mt-2 h-[91.5%] z-[9999]"
-            initial={{
-              x: -700,
-            }}
-            animate={{
+            className="lg:hidden fixed inset-0 top-16 bg-blue-600 z-[9999] overflow-hidden"
+            initial={{ x: -400 }}
+            animate={{ 
               x: 0,
-              transition: { type: "tween" }
-              // transition: { type: 'linear' },
+              transition: { type: "tween", duration: 0.3 }
             }}
-            exit={{
-              x: -700,
+            exit={{ 
+              x: -400,
+              transition: { type: "tween", duration: 0.3 }
             }}
           >
-            <div className="flex px-4 justify-center items-center">
-              <div
-                className="flex gap-3 items-center border-white w-full border-b justify-center cursor-default text-white"
-                onClick={handleLogout}
-              >
-                <LogOut size={16} />
-                Logout
+            <div className="flex flex-col h-full min-h-0">
+              {/* User Info Section */}
+              <div className="flex-shrink-0 p-6 border-b border-blue-500">
+                <div className="flex items-center gap-3">
+                  <AvatarComponent name={name} src={src} />
+                  <div className="text-white">
+                    <p className="font-medium">{name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items - Scrollable if needed */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {/* Add mobile menu items here if needed */}
+                <div className="text-white/80 text-sm">
+                  <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-3 w-full p-4 text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors font-medium"
+                >
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+                </div>
+              </div>
+
+              {/* Logout Button - Always visible at bottom */}
+              <div className="flex-shrink-0 p-4 border-t border-blue-500 bg-blue-600">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-3 w-full p-4 text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors font-medium"
+                >
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </Header>
+    </header>
   );
 };

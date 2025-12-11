@@ -29,6 +29,10 @@ import {
   TableRow,
 } from '@/app/_components/ui/table';
 import { openDatabase } from '@/app/_lib/indexed-db';
+import { useMediaPlayer } from '@/app/_contexts/media-player-provider';
+import { convertOfflineMediaToMediaItem, validateCachedMedia } from '@/app/_lib/offline-media-utils';
+import { updateViewed } from '../../../home/[id]/action';
+import { toast } from 'sonner';
 
 const CACHE_NAME = 'media-cache-v5';
 
@@ -48,6 +52,85 @@ export function LibraryMediaTable({ columns }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { loadMedia, loadPlaylist, play } = useMediaPlayer();
+
+  const handleRowClick = async (offlineMedia: OfflineMedia, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    try {
+      // Validate that required fields exist
+      if (!offlineMedia.id || !offlineMedia.url || !offlineMedia.type) {
+        toast.error('Media data is incomplete. Please download it again.');
+        return;
+      }
+
+      // Validate cache before attempting to play
+      const validation = await validateCachedMedia(offlineMedia.url, offlineMedia.size);
+
+      if (!validation.isValid) {
+        toast.error(validation.message || 'Failed to load offline media');
+        
+        if (!validation.exists) {
+          toast.info('Please download this media to play it offline.');
+        } else if (validation.isCorrupted) {
+          toast.info('Try downloading the media again.');
+        }
+        
+        return;
+      }
+
+      // Convert offline media to MediaItem format with blob URL
+      const mediaItem = await convertOfflineMediaToMediaItem(offlineMedia);
+
+      // If we have multiple media items, load as playlist
+      if (cachedMedia.length > 1) {
+        // Validate and convert all media items for playlist
+        const validMediaItems = [];
+        
+        for (const media of cachedMedia) {
+          try {
+            const validation = await validateCachedMedia(media.url, media.size);
+            if (validation.isValid) {
+              const convertedMedia = await convertOfflineMediaToMediaItem(media);
+              validMediaItems.push(convertedMedia);
+            }
+          } catch (error) {
+            console.warn(`Skipping invalid media: ${media.name}`, error);
+          }
+        }
+        
+        if (validMediaItems.length > 1) {
+          const currentIndex = validMediaItems.findIndex(m => m.id === mediaItem.id);
+          await loadPlaylist(validMediaItems, currentIndex >= 0 ? currentIndex : 0);
+        } else {
+          // Fallback to single media if playlist validation failed
+          await loadMedia(mediaItem);
+        }
+      } else {
+        // Single media item
+        await loadMedia(mediaItem);
+      }
+
+      // Start playback
+      await play();
+
+      // Update viewed status
+      updateViewed({ mediaId: offlineMedia.id });
+
+    } catch (error) {
+      console.error('[LibraryTable] Failed to play offline media:', error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to load offline media. Please try again.';
+      
+      toast.error(errorMessage);
+    }
+  };
 
   // Migration function to fix old metadata structure
   const migrateMetadata = (metadata: any): OfflineMedia | null => {
@@ -245,7 +328,8 @@ export function LibraryMediaTable({ columns }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

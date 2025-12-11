@@ -28,6 +28,9 @@ import {
   TableRow,
 } from '@/app/_components/ui/table';
 import { DataTableToolbar } from './media-table-toolbar';
+import { useMediaPlayer } from '@/app/_contexts/media-player-provider';
+import { MediaItem, MediaType } from '@/src/entities/models/media';
+import { useParams } from 'next/navigation';
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -45,6 +48,46 @@ export function MediaTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { loadMedia, loadPlaylist, play } = useMediaPlayer();
+  const params = useParams();
+  
+  // Convert Media to MediaItem format
+  const convertToMediaItem = (media: Media): MediaItem => ({
+    id: media.id,
+    name: media.name,
+    type: media.type as MediaType,
+    url: media.url,
+    size: media.size,
+    format: media.format,
+    courseId: params.courseId as string,
+    levelId: params.levelId as string,
+    userId: '',
+    createdAt: media.createdAt,
+    updatedAt: media.updatedAt,
+  });
+  
+  const handleRowClick = async (media: Media, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    const mediaItem = convertToMediaItem(media);
+    
+    // If we have multiple media items, load as playlist
+    if (data.length > 1) {
+      const playlist = data.map(convertToMediaItem);
+      const currentIndex = data.findIndex(m => m.id === media.id);
+      await loadPlaylist(playlist, currentIndex >= 0 ? currentIndex : 0);
+    } else {
+      // Single media item
+      await loadMedia(mediaItem);
+    }
+    
+    // Start playback
+    await play();
+  };
 
   const table = useReactTable({
     data,
@@ -101,7 +144,8 @@ export function MediaTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

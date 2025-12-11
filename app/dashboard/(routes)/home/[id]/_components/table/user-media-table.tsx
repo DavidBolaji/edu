@@ -28,6 +28,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/app/_components/ui/table';
+import { useMediaPlayer } from '@/app/_contexts/media-player-provider';
+import { updateViewed } from '../../action';
+import { MediaType } from '@/src/entities/models/media';
 
 declare module '@tanstack/react-table' {
 
@@ -46,6 +49,48 @@ export function UserMediaTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { loadMedia, loadPlaylist, play } = useMediaPlayer();
+
+  // Convert UserMedia to MediaItem format
+  const convertToMediaItem = (media: UserMedia) => ({
+    id: media.id,
+    name: media.name,
+    type: media.type as MediaType,
+    url: media.url,
+    size: media.size,
+    format: media.format,
+    courseId: '',
+    levelId: '',
+    userId: '',
+    createdAt: media.createdAt,
+    updatedAt: media.updatedAt,
+  });
+
+  const handleRowClick = async (media: UserMedia, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    const mediaItem = convertToMediaItem(media);
+    
+    // If we have multiple media items, load as playlist
+    if (data.length > 1) {
+      const playlist = data.map(convertToMediaItem);
+      const currentIndex = data.findIndex(m => m.id === media.id);
+      await loadPlaylist(playlist, currentIndex >= 0 ? currentIndex : 0);
+    } else {
+      // Single media item
+      await loadMedia(mediaItem);
+    }
+    
+    // Start playback
+    await play();
+    
+    // Update viewed status
+    updateViewed({ mediaId: media.id });
+  };
 
   const table = useReactTable({
     data,
@@ -102,7 +147,8 @@ export function UserMediaTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

@@ -144,9 +144,9 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
             </div>
           </div>
         )}
-        <div className="mx-auto mt-4 max-w-md">
+        <div className="mx-auto mt-4 max-w-md ">
           <Button
-            className="w-24 mx-auto flex justify-center"
+            className=" mx-auto flex justify-center "
             onClick={handleSubscription}
           >
             Subscription

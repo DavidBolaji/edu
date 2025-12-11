@@ -3,10 +3,10 @@
 import { Button } from '@/app/_components/ui/button';
 import { cn } from '@/app/_lib/utils';
 import { subscribeOrUnsubscribe } from '@/app/dashboard/_services/subscription.services';
-import { reload } from '@/app/dashboard/action';
+
 import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import React, { startTransition, useCallback, useState } from 'react';
+import React, { useCallback, useState, startTransition } from 'react';
 import { toast } from 'sonner';
 
 const RenderButtons: React.FC<{
@@ -38,7 +38,7 @@ const RenderButtons: React.FC<{
     setLoading((prev) => !prev);
     //force reload
     setTimeout(() => {
-      reload(`/dashboard/home/${params.id}`);
+      window.location.reload();
     }, 500);
   };
 
@@ -83,10 +83,10 @@ const RenderButtons: React.FC<{
   };
 
   return (
-    <div className="text-center space-y-3">
+    <div className="text-center space-y-3 py-4">
       <Button
         onClick={() => handleSubscribe(tutorId, isSubscribed)}
-        className={cn('w-60', {
+        className={cn('w-60 px-4 py-2', {
           'bg-indigo-100 hover:text-white text-indigo-500': !isSubscribed,
           'bg-primary': isSubscribed,
         })}
@@ -97,25 +97,25 @@ const RenderButtons: React.FC<{
           <span>{isSubscribed ? 'Subscribed' : 'Subscribe'}</span>
         )}
       </Button>
-      <div className="space-x-3">
-        <Button className="bg-indigo-500 w-28" onClick={handleViewPortal}>
+      <div className="flex justify-center space-x-3">
+        <Button className="bg-indigo-500 w-28 px-4 py-2" onClick={handleViewPortal}>
           Portal
         </Button>
-        <Button className="bg-indigo-500 w-28" onClick={handleViewQuiz}>
+        <Button className="bg-indigo-500 w-28 px-4 py-2" onClick={handleViewQuiz}>
           Quiz
         </Button>
       </div>
-      {join.isLive ? (
+      {join.isLive && (
         <Button
           onClick={handleJoin}
-          className={cn('w-60', {
+          className={cn('w-60 px-4 py-2', {
             'bg-indigo-100 hover:text-white text-indigo-500': !isSubscribed,
             'bg-primary': isSubscribed,
           })}
         >
-          join
+          Join Live Class
         </Button>
-      ) : null}
+      )}
     </div>
   );
 };

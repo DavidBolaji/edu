@@ -71,13 +71,6 @@ export function MediaTableRowActions({ row, allMedia = [] }: DataTableRowActions
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={handlePlayMedia}>
-            Play
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem>
             Edit
             <DropdownMenuShortcut>

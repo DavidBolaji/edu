@@ -168,7 +168,7 @@ export const PortalForm: React.FC<PortalFormProps> = ({ onSubmit, user }) => {
           <Button
             type="submit"
             disabled={isSubmitting || !isValid}
-            className="w-full mt-6"
+            className="w-full mt-6 px-4 py-2"
           >
             Create Portal
           </Button>

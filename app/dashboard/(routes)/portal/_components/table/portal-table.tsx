@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -17,7 +17,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-
 import { DataTablePagination } from '@/app/_components/table/data-table-pagination';
 import { Portal } from './schema';
 import {
@@ -29,6 +28,7 @@ import {
   TableRow,
 } from '@/app/_components/ui/table';
 import { DataTableToolbar } from './portal-table-toolbar';
+import { useRouter } from 'next/navigation';
 
 declare module '@tanstack/react-table' {
 
@@ -47,6 +47,20 @@ export function PortalTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const router = useRouter();
+
+  const handleRowClick = (portal: Portal, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    // Navigate to portal submissions page
+    startTransition(() => {
+      router.push(`/dashboard/portal/submissions/${portal.id}`);
+    });
+  };
 
   const table = useReactTable({
     data,
@@ -103,7 +117,8 @@ export function PortalTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

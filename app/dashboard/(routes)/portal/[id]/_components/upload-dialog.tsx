@@ -141,7 +141,7 @@ export function UploadDialog({ portal, studentId, triggerClassName }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={triggerClassName} disabled={disabled}>
+        <Button className={`px-4 py-2 ${triggerClassName || ''}`} disabled={disabled}>
           {disabled ? "Portal is closed" : alreadySubmitted ? "Resubmit" : "Submit"}
         </Button>
       </DialogTrigger>
@@ -196,10 +196,10 @@ export function UploadDialog({ portal, studentId, triggerClassName }: Props) {
         </div>
 
         <DialogFooter className="mt-2">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+          <Button variant="outline" className="px-4 py-2" onClick={() => setOpen(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button onClick={onSubmit} disabled={submitting || !file}>
+          <Button className="px-4 py-2" onClick={onSubmit} disabled={submitting || !file}>
             {submitting 
               ? (alreadySubmitted ? "Resubmitting..." : "Submitting...") 
               : (alreadySubmitted ? "Resubmit" : "Submit")

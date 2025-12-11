@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -17,9 +17,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
-
 import { DataTablePagination } from '@/app/_components/table/data-table-pagination';
-
 import {
   Table,
   TableBody,
@@ -30,6 +28,7 @@ import {
 } from '@/app/_components/ui/table';
 import { DataTableToolbar } from './submission-table-toolbar';
 import { Submission } from '../../../../types';
+import { useRouter, useParams } from 'next/navigation';
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -47,6 +46,21 @@ export function SubmissionTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const router = useRouter();
+  const params = useParams();
+
+  const handleRowClick = (submission: Submission, event: React.MouseEvent) => {
+    // Prevent row click when clicking on action buttons or checkboxes
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.dropdown-menu')) {
+      return;
+    }
+
+    // Navigate to submission detail page (you may need to adjust this route)
+    startTransition(() => {
+      router.push(`/dashboard/portal/submissions/${params.portalId}/${submission.id}`);
+    });
+  };
 
   const table = useReactTable({
     data,
@@ -103,7 +117,8 @@ export function SubmissionTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row"
+                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

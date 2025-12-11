@@ -3,15 +3,14 @@ import {
   getSingleUser,
 } from '@/app/dashboard/_services/user.services';
 import React from 'react';
+import { UserContextProvider } from './_context/user-context';
+import { userMediaListSchema } from './_data/schema';
+import { getUserMedia } from './action';
+import { UserMediaTable } from './_components/table/user-media-table';
+import { columns } from './_components/table/user-media-columns';
 import MyImageAndSchool from '../../profile/_components/my-image-and-school';
 import MyCounts from '../../profile/_components/my-counts';
 import RenderButtons from '../_components/render-buttons';
-import { DashboardBreadcrumb } from '@/app/dashboard/_components/bread-crumb';
-import { UserContextProvider } from './_context/user-context';
-import { userMediaListSchema } from './_data/schema';
-import { UserMediaTable } from './_components/table/user-media-table';
-import { columns } from './_components/table/user-media-columns';
-import { getUserMedia } from './action';
 
 interface ViewUserPageParams {
   params: { id: string };
@@ -20,47 +19,48 @@ interface ViewUserPageParams {
 export const revalidate = 0;
 
 const ViewUserPage: React.FC<ViewUserPageParams> = async ({ params }) => {
-  let singleUser: any;
   const userId = (await params)?.id;
-  const user = await getDetails();
-  const req = await getUserMedia({ userId });
-  const mediaList = userMediaListSchema.parse(req.medias || []);
   
-
-
-  try {
-    const request = await getSingleUser(userId);
-    singleUser = request;
-  } catch (error) {
-    throw error;
-  }
+  // Fetch all data in parallel to reduce loading time
+  const [user, req, singleUserRequest] = await Promise.all([
+    getDetails(),
+    getUserMedia({ userId }),
+    getSingleUser(userId).catch((error) => {
+      console.error('Error fetching single user:', error);
+      throw error;
+    })
+  ]);
+  
+  const singleUser = singleUserRequest;
+  const mediaList = userMediaListSchema.parse(req.medias || []);
 
   return (
     <UserContextProvider>
-      <div className="md:mx-4">
-        <DashboardBreadcrumb
-          paths={[
-            {
-              name: 'dashboard',
-              url: '/dashboard/home',
-            },
-            {
-              name: `${singleUser?.fname} ${singleUser?.lname}`,
-              url: '#',
-            },
-          ]}
-        />
-      </div>
-      <MyImageAndSchool user={singleUser} edit={false} />
-      <MyCounts user={singleUser} />
-      <RenderButtons
-        tutorId={singleUser.id}
-        subscriptions={user.subscriptions}
-        join={{isLive: req?.user?.isLive || false, code: req?.user?.code || null, userId: user.id, name: `${user.fname} ${user.lname}`}}
-       
-      />
-      <div className="-mx-4 mt-10 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
-        <UserMediaTable data={mediaList} columns={columns} />
+      <div style={{ overflow: 'visible' }}>
+        {/* User Profile Header */}
+        <div className="mb-2 flex flex-wrap items-center justify-between space-y-2">
+          <div className="w-full">
+            <div className="bg-white rounded-lg p-6">
+              <MyImageAndSchool user={singleUser} edit={false} />
+              <MyCounts user={singleUser} />
+              <RenderButtons
+                tutorId={singleUser.id}
+                subscriptions={user.subscriptions}
+                join={{
+                  isLive: req?.user?.isLive || false, 
+                  code: req?.user?.code || null, 
+                  userId: user.id, 
+                  name: `${user.fname} ${user.lname}`
+                }}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Media Table - Same structure as library */}
+        <div className="-mx-4 flex-1 px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12" style={{ overflow: 'visible' }}>
+          <UserMediaTable data={mediaList} columns={columns} />
+        </div>
       </div>
     </UserContextProvider>
   );

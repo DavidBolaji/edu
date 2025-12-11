@@ -100,7 +100,7 @@ const PortalForm: React.FC<PortalFormProps> = ({ currentRow }) => {
                         />
                     </div>
 
-                    <Button type="submit" className="translate-y-3">
+                    <Button type="submit" className="translate-y-3 px-4 py-2">
                         {isSubmitting ? (
                             <Loader2 className="w-8 h-8 text-white animate-spin" />
                         ) : (

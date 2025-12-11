@@ -58,30 +58,6 @@ export function UserMediaTableRowActions({ row, allMedia = [] }: DataTableRowAct
     updateViewed({ mediaId: media.id });
   };
 
-  return (
-    <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
-          >
-            <DotsHorizontalIcon className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem
-            onClick={handlePlayUserMedia}
-            className="text-red-500!"
-          >
-            View
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
-  );
+  // No actions needed - view/play is handled by row click
+  return null;
 }

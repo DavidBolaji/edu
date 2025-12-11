@@ -184,10 +184,10 @@ export function MediaPlayerModal() {
             {/* Full Player Modal */}
             <Dialog open={isModalOpen} onOpenChange={(open) => !open && minimize()}>
                 <DialogPortal>
-                    <DialogOverlay className="bg-black/95" />
+                    <DialogOverlay className="bg-black/95 z-[100]" />
                     <DialogContent
                         className={cn(
-                            "max-w-7xl w-[95vw] h-[90vh] p-0 border-0 bg-transparent",
+                            "max-w-7xl w-[95vw] h-[90vh] p-0 border-0 bg-transparent z-[100]",
                             "overflow-hidden"
                         )}
                         // Prevent default close button from showing
@@ -198,11 +198,11 @@ export function MediaPlayerModal() {
                         }}
                     >
                         {/* Decorative Header - Gradient Bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 z-10" />
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 z-[110]" />
 
                         {/* Loading Overlay */}
                         {isLoading && (
-                            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20">
+                            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-[120]">
                                 <div className="flex flex-col items-center space-y-4">
                                     <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white"></div>
                                     <p className="text-white text-lg font-medium">Loading media...</p>
@@ -213,7 +213,7 @@ export function MediaPlayerModal() {
                         {/* Error Display */}
                         {state.error ? (
                             state.currentMedia?.type === "EBOOK" && state.error.code === "PLAYBACK_FAILED" ? null :
-                                <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-20 p-6">
+                                <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-[120] p-6">
                                     <div className="text-center max-w-2xl">
                                         <div className="text-red-500 text-6xl mb-4">⚠️</div>
                                         <h3 className="text-white text-2xl font-bold mb-2">Playback Error</h3>
@@ -273,7 +273,7 @@ export function MediaPlayerModal() {
 
                         {/* Close Button Overlay for Ebook - blocks Google Docs "open in new tab" */}
                         {state.currentMedia?.type === 'EBOOK' && (
-                            <div className="absolute top-4 right-4 z-60">
+                            <div className="absolute top-4 right-4 z-[160]">
                                 <Button
                                     variant="ghost"
                                     size="icon"
