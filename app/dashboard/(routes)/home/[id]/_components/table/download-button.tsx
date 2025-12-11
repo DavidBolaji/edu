@@ -8,7 +8,7 @@ import Spinner from '@/app/_components/ui/spinner';
 import { getMetadata, saveMetadata } from '@/app/_lib/indexed-db';
 import { createOffline } from '../../../action';
 
-const CACHE_NAME = 'media-cache-v5';
+const CACHE_NAME = 'media-cache-v6';
 
 interface DownloadButtonProps {
   mediaUrl: string;

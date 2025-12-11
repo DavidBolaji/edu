@@ -34,7 +34,7 @@ import { convertOfflineMediaToMediaItem, validateCachedMedia } from '@/app/_lib/
 import { updateViewed } from '../../../home/[id]/action';
 import { toast } from 'sonner';
 
-const CACHE_NAME = 'media-cache-v5';
+const CACHE_NAME = 'media-cache-v6';
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {

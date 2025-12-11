@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const CACHE_NAME = 'media-cache-v5';
+const CACHE_NAME = 'media-cache-v6';
 
 const useCachedMedia = () => {
   const [cachedMedia, setCachedMedia] = useState<string[]>([]);

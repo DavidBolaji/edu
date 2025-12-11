@@ -177,3 +177,46 @@ body>* {
   position: relative !important;
   z-index: 1 !important;
 }
+
+/* Mobile Video Conference Improvements */
+@media (max-width: 768px) {
+  /* Ensure touch targets are at least 44px */
+  .lk-participant-tile button,
+  .video-conference-controls button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent horizontal overflow on mobile */
+  .video-conference-controls {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .video-conference-controls::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Improve dropdown positioning on mobile */
+  .mobile-dropdown {
+    position: fixed !important;
+    bottom: 80px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90vw !important;
+    max-width: 320px !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Better mobile video grid */
+  .lk-grid-layout {
+    padding: 8px !important;
+    gap: 8px !important;
+  }
+  
+  /* Mobile-friendly participant tiles */
+  .lk-participant-tile {
+    min-height: 120px !important;
+  }
+}

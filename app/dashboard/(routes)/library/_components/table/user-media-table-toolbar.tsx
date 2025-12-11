@@ -30,7 +30,7 @@ export function DataTableToolbar<TData>({
     setIsClearing(true);
     try {
       // Clear cache
-      const cache = await caches.open('media-cache-v5');
+      const cache = await caches.open('media-cache-v6');
       const keys = await cache.keys();
       await Promise.all(keys.map(key => cache.delete(key)));
 

@@ -113,7 +113,7 @@ export function LibraryTableRowActions({ row, allMedia = [], onCacheCleared }: D
       const offlineMedia = row.original;
       
       // Open cache and IndexedDB
-      const cache = await caches.open('media-cache-v5');
+      const cache = await caches.open('media-cache-v6');
       const db = await openDatabase();
       
       // Remove from cache

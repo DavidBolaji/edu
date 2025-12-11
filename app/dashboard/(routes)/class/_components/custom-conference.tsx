@@ -50,13 +50,15 @@ export default function CustomConference({
   endCall: () => void,
   name: string | null
 }) {
+  // Debug logging
+  console.log('CustomConference props:', { roomId, isHost, name });
   const participants = useParticipants();
   const room = useMaybeRoomContext();
   const { localParticipant } = useLocalParticipant();
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
@@ -77,6 +79,9 @@ export default function CustomConference({
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>('');
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const [mutedParticipants, setMutedParticipants] = useState<Record<string, boolean>>({});
+  const [allMuted, setAllMuted] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(true);
 
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
@@ -135,13 +140,24 @@ export default function CustomConference({
   // Load available devices
   useEffect(() => {
     const loadDevices = async () => {
+      console.log('Starting device enumeration...');
       try {
+        // Request permissions first to get device labels
+        console.log('Requesting media permissions...');
+        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        console.log('Media permissions granted');
+        
         const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('All devices:', devices);
 
         const audioInputs = devices.filter(device => device.kind === 'audioinput');
         const videoInputs = devices.filter(device => device.kind === 'videoinput');
         const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
 
+        console.log('Available audio devices:', audioInputs);
+        console.log('Available video devices:', videoInputs);
+        console.log('Available audio outputs:', audioOutputs);
+        
         setAudioDevices(audioInputs);
         setVideoDevices(videoInputs);
         setSpeakerDevices(audioOutputs);
@@ -158,6 +174,19 @@ export default function CustomConference({
         }
       } catch (error) {
         console.error('Error loading devices:', error);
+        // Fallback: try to enumerate without permissions (will have limited labels)
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const audioInputs = devices.filter(device => device.kind === 'audioinput');
+          const videoInputs = devices.filter(device => device.kind === 'videoinput');
+          const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+          
+          setAudioDevices(audioInputs);
+          setVideoDevices(videoInputs);
+          setSpeakerDevices(audioOutputs);
+        } catch (fallbackError) {
+          console.error('Fallback device enumeration failed:', fallbackError);
+        }
       }
     };
 
@@ -348,6 +377,34 @@ export default function CustomConference({
     }
   });
 
+  // Listen for admin commands
+  useDataChannel('admin', (message) => {
+    const decodedMessage = decoder.decode(message.payload);
+    const data = JSON.parse(decodedMessage);
+
+    if (data.type === 'muteAll') {
+      // Only non-host participants should respond to mute all
+      if (!isHost && localParticipant) {
+        try {
+          localParticipant.setMicrophoneEnabled(!data.muted);
+          setIsMuted(data.muted);
+        } catch (e) {
+          console.error('Failed to respond to mute all command', e);
+        }
+      }
+    } else if (data.type === 'muteParticipant') {
+      // Only the targeted participant should respond
+      if (!isHost && localParticipant && localParticipant.identity === data.participantId) {
+        try {
+          localParticipant.setMicrophoneEnabled(!data.muted);
+          setIsMuted(data.muted);
+        } catch (e) {
+          console.error('Failed to respond to individual mute command', e);
+        }
+      }
+    }
+  });
+
   // Listen for chat messages
   useDataChannel('chat', (message) => {
     const decodedMessage = decoder.decode(message.payload);
@@ -455,19 +512,40 @@ export default function CustomConference({
   const switchMicrophone = async (deviceId: string) => {
     if (localParticipant && room) {
       try {
-        try {
-          await navigator.mediaDevices.getUserMedia({ audio: { deviceId } });
-        } catch (err) {
-          // ignore
-        }
+        console.log('Attempting to switch to microphone:', deviceId);
+        
+        // First, try to get access to the specific device
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            deviceId: { exact: deviceId } 
+          } 
+        });
+        
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Now switch the active device in LiveKit
         await room.switchActiveDevice('audioinput', deviceId);
+        
+        // Update state
         setSelectedMic(deviceId);
         setShowMicMenu(false);
-        console.log('Switched to microphone:', deviceId);
+        
+        console.log('Successfully switched to microphone:', deviceId);
+        
+        // Ensure microphone is enabled after switching
+        if (localParticipant.isMicrophoneEnabled) {
+          await localParticipant.setMicrophoneEnabled(false);
+          await localParticipant.setMicrophoneEnabled(true);
+        }
+        
       } catch (error) {
         console.error('Error switching microphone:', error);
-        alert('Could not switch microphone. See console for details.');
+        alert(`Could not switch to selected microphone. Error: ${(error as any)?.message}`);
       }
+    } else {
+      console.error('LocalParticipant or room not available for microphone switch');
+      alert('Cannot switch microphone - not connected to room');
     }
   };
 
@@ -513,7 +591,112 @@ export default function CustomConference({
 
   const shareScreen = async () => {
     if (localParticipant) {
-      await localParticipant.setScreenShareEnabled(true);
+      try {
+        // Check if we're on mobile and handle accordingly
+        if (isMobile) {
+          // On mobile, we need to request screen capture with specific constraints
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              width: { max: 1920 },
+              height: { max: 1080 },
+              frameRate: { max: 15 }
+            },
+            audio: false // Audio sharing often causes issues on mobile
+          });
+          
+          // Enable screen share with the obtained stream
+          await localParticipant.setScreenShareEnabled(true);
+        } else {
+          await localParticipant.setScreenShareEnabled(true);
+        }
+      } catch (error) {
+        console.error('Screen sharing failed:', error);
+        alert('Screen sharing is not supported on this device or browser.');
+      }
+    }
+  };
+
+  // Admin functions for muting participants
+  const muteAllParticipants = () => {
+    if (!isHost) return;
+    
+    const message = JSON.stringify({
+      type: 'muteAll',
+      muted: true
+    });
+    const data = encoder.encode(message);
+    
+    if (room) {
+      try {
+        room.localParticipant.publishData(data, { reliable: true, topic: 'admin' });
+        setAllMuted(true);
+      } catch (e) {
+        console.error('Failed to mute all participants', e);
+      }
+    }
+  };
+
+  const unmuteAllParticipants = () => {
+    if (!isHost) return;
+    
+    const message = JSON.stringify({
+      type: 'muteAll',
+      muted: false
+    });
+    const data = encoder.encode(message);
+    
+    if (room) {
+      try {
+        room.localParticipant.publishData(data, { reliable: true, topic: 'admin' });
+        setAllMuted(false);
+        setMutedParticipants({});
+      } catch (e) {
+        console.error('Failed to unmute all participants', e);
+      }
+    }
+  };
+
+  const muteParticipant = (participantId: string) => {
+    if (!isHost) return;
+    
+    const message = JSON.stringify({
+      type: 'muteParticipant',
+      participantId,
+      muted: true
+    });
+    const data = encoder.encode(message);
+    
+    if (room) {
+      try {
+        room.localParticipant.publishData(data, { reliable: true, topic: 'admin' });
+        setMutedParticipants(prev => ({ ...prev, [participantId]: true }));
+      } catch (e) {
+        console.error('Failed to mute participant', e);
+      }
+    }
+  };
+
+  const unmuteParticipant = (participantId: string) => {
+    if (!isHost) return;
+    
+    const message = JSON.stringify({
+      type: 'muteParticipant',
+      participantId,
+      muted: false
+    });
+    const data = encoder.encode(message);
+    
+    if (room) {
+      try {
+        room.localParticipant.publishData(data, { reliable: true, topic: 'admin' });
+        setMutedParticipants(prev => {
+          const updated = { ...prev };
+          delete updated[participantId];
+          return updated;
+        });
+      } catch (e) {
+        console.error('Failed to unmute participant', e);
+      }
     }
   };
 
@@ -878,8 +1061,89 @@ export default function CustomConference({
               </>
             )}
           </button>
+          
+          <button
+            onClick={() => {
+              console.log('Debug button clicked from header');
+              setShowDebugPanel(!showDebugPanel);
+              // Also open participants panel if it's closed
+              if (!showParticipants) {
+                setShowParticipants(true);
+              }
+            }}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              showDebugPanel 
+                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                : 'bg-gray-600 hover:bg-gray-700 text-white'
+            }`}
+            title="Toggle debug panel"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Debug
+          </button>
         </div>
       </div>
+
+      {/* Floating Debug Panel - Independent of participants sidebar */}
+      {showDebugPanel && !showParticipants && (
+        <div className="fixed top-20 right-4 w-80 bg-gray-800 rounded-lg border-2 border-purple-500 p-4 z-[99999] shadow-2xl">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-purple-400">🐛 Debug Information</h4>
+            <button 
+              onClick={() => setShowDebugPanel(false)}
+              className="text-xs text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="text-xs space-y-1">
+            <div>Is Host: <span className="text-green-400">{isHost ? 'Yes' : 'No'}</span></div>
+            <div>Participants: <span className="text-blue-400">{participants.length}</span></div>
+            <div>Local Participant: <span className="text-yellow-400">{localParticipant?.identity || 'None'}</span></div>
+            <div>Audio Devices: <span className="text-cyan-400">{audioDevices.length}</span></div>
+            <div>Show Mic Menu: <span className="text-pink-400">{showMicMenu ? 'Yes' : 'No'}</span></div>
+            <div>Selected Mic: <span className="text-orange-400">{selectedMic || 'None'}</span></div>
+            <div>Participants Panel: <span className="text-red-400">{showParticipants ? 'Open' : 'Closed'}</span></div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button 
+              onClick={() => {
+                console.log('Force toggle mic menu from floating debug');
+                setShowMicMenu(!showMicMenu);
+              }}
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs"
+            >
+              Toggle Mic Menu
+            </button>
+            <button 
+              onClick={async () => {
+                console.log('Refreshing devices from floating debug...');
+                try {
+                  const devices = await navigator.mediaDevices.enumerateDevices();
+                  const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                  console.log('Audio devices found:', audioInputs);
+                  setAudioDevices(audioInputs);
+                } catch (e) {
+                  console.error('Device enumeration failed:', e);
+                }
+              }}
+              className="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-xs"
+            >
+              Refresh Devices
+            </button>
+            <button 
+              onClick={() => {
+                setShowParticipants(true);
+              }}
+              className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-white text-xs"
+            >
+              Open Participants
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Video Area */}
       <div className="flex-1 flex overflow-hidden">
@@ -919,10 +1183,110 @@ export default function CustomConference({
               <h3 className="text-lg font-semibold">
                 Participants ({participants.length})
               </h3>
-              {isMobile && (
-                <button onClick={() => setShowParticipants(false)} className="text-sm px-2 py-1 bg-gray-700 rounded">Close</button>
-              )}
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowDebugPanel(!showDebugPanel)}
+                  className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white"
+                  title="Toggle debug panel"
+                >
+                  Debug
+                </button>
+                {isMobile && (
+                  <button onClick={() => setShowParticipants(false)} className="text-sm px-2 py-1 bg-gray-700 rounded">Close</button>
+                )}
+              </div>
             </div>
+
+            {/* Debug Panel - Toggleable */}
+            {showDebugPanel && (
+              <div className="mb-4 p-3 bg-gray-800 rounded border border-purple-500">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold text-purple-400">Debug Information</h4>
+                  <button 
+                    onClick={() => setShowDebugPanel(false)}
+                    className="text-xs text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div>Is Host: <span className="text-green-400">{isHost ? 'Yes' : 'No'}</span></div>
+                  <div>Participants: <span className="text-blue-400">{participants.length}</span></div>
+                  <div>Local Participant: <span className="text-yellow-400">{localParticipant?.identity || 'None'}</span></div>
+                  <div>Audio Devices: <span className="text-cyan-400">{audioDevices.length}</span></div>
+                  <div>Show Mic Menu: <span className="text-pink-400">{showMicMenu ? 'Yes' : 'No'}</span></div>
+                  <div>Selected Mic: <span className="text-orange-400">{selectedMic || 'None'}</span></div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button 
+                    onClick={() => {
+                      console.log('Force toggle mic menu');
+                      setShowMicMenu(!showMicMenu);
+                    }}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs"
+                  >
+                    Toggle Mic Menu
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      console.log('Refreshing devices...');
+                      try {
+                        const devices = await navigator.mediaDevices.enumerateDevices();
+                        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                        console.log('Audio devices found:', audioInputs);
+                        setAudioDevices(audioInputs);
+                      } catch (e) {
+                        console.error('Device enumeration failed:', e);
+                      }
+                    }}
+                    className="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-xs"
+                  >
+                    Refresh Devices
+                  </button>
+                  <button 
+                    onClick={() => {
+                      console.log('Current state:', {
+                        showMicMenu,
+                        showVideoMenu,
+                        showSpeakerMenu,
+                        audioDevices: audioDevices.length,
+                        selectedMic
+                      });
+                    }}
+                    className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-white text-xs"
+                  >
+                    Log State
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Admin Controls */}
+            {isHost && (
+              <div className="mb-4 p-3 bg-blue-900/30 border border-blue-600/50 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-400 mb-3">Host Controls</h4>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={allMuted ? unmuteAllParticipants : muteAllParticipants}
+                    className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      allMuted 
+                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    {allMuted ? 'Unmute All' : 'Mute All'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback Admin Controls - Always show for debugging */}
+            {!isHost && (
+              <div className="mb-4 p-3 bg-orange-900/30 border border-orange-600/50 rounded-lg">
+                <h4 className="text-sm font-semibold text-orange-400 mb-3">Debug: Not Host</h4>
+                <p className="text-xs text-gray-400">If you should be host, check URL parameters</p>
+              </div>
+            )}
 
             {raisedHandParticipants.length > 0 && (
               <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg">
@@ -953,7 +1317,8 @@ export default function CustomConference({
               {sortedParticipants.map((participant) => {
                 const audioLevel = audioLevels[participant.identity] || 0;
                 const isSpeaking = audioLevel > 0.05;
-                 const metadata = participant.metadata ? JSON.parse(participant.metadata) : {}
+                const metadata = participant.metadata ? JSON.parse(participant.metadata) : {};
+                const isParticipantMuted = mutedParticipants[participant.identity] || !participant.isMicrophoneEnabled;
 
                 return (
                   <div
@@ -973,14 +1338,39 @@ export default function CustomConference({
                         {participantHands[participant.identity] && (
                           <span className="ml-2">✋</span>
                         )}
+                        {isParticipantMuted && (
+                          <MicOff size={12} className="inline ml-2 text-red-400" />
+                        )}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <AudioVisualizer level={audioLevel} />
                       </div>
                     </div>
-                    {participant.isLocal && (
-                      <span className="text-xs text-blue-400">(You)</span>
-                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      {participant.isLocal && (
+                        <span className="text-xs text-blue-400">(You)</span>
+                      )}
+                      
+                      {/* Host controls for other participants */}
+                      {isHost && !participant.isLocal && (
+                        <button
+                          onClick={() => 
+                            isParticipantMuted 
+                              ? unmuteParticipant(participant.identity)
+                              : muteParticipant(participant.identity)
+                          }
+                          className={`p-1 rounded text-xs transition-colors ${
+                            isParticipantMuted
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                          }`}
+                          title={isParticipantMuted ? 'Unmute participant' : 'Mute participant'}
+                        >
+                          {isParticipantMuted ? <Mic size={12} /> : <MicOff size={12} />}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -1060,8 +1450,8 @@ export default function CustomConference({
       </div>
 
       {/* Bottom Control Bar */}
-      <div className="px-6 py-4">
-        <div className="flex items-center text-wrap justify-between max-w-7xl mx-auto">
+      <div className={`px-4 py-3 ${isMobile ? 'pb-6' : 'px-6 py-4'}`}>
+        <div className={`flex items-center ${isMobile ? 'flex-col gap-3' : 'justify-between'} max-w-7xl mx-auto`}>
           {/* Left side - Audio Visualizer - Fixed width to prevent movement */}
           <div className="hidden md:flex items-center gap-3 text-sm text-gray-400 w-48">
             <div className="hidden md:flex items-center gap-2">
@@ -1076,29 +1466,35 @@ export default function CustomConference({
           </div>
 
           {/* Center - Main controls */}
-          <div className="flex flex-wrap justify-center items-center gap-2 w-full mx-auto bg-black">
+          <div className={`flex ${isMobile ? 'flex-wrap justify-center' : 'justify-center items-center'} gap-2 ${isMobile ? 'w-full' : 'w-full mx-auto'}`}>
             {/* Audio with dropdown */}
             <div className="relative" ref={micMenuRef}>
               <div className="flex">
                 <button
                   type="button"
                   onClick={toggleAudio}
-                  className={`p-4 rounded-l-lg transition-colors ${isMuted
+                  className={`${isMobile ? 'p-3' : 'p-4'} rounded-l-lg transition-colors ${isMuted
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-gray-700 hover:bg-gray-600'
                     }`}
                   title={isMuted ? 'Unmute' : 'Mute'}
                 >
-                  {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                  {isMuted ? <MicOff size={isMobile ? 18 : 20} /> : <Mic size={isMobile ? 18 : 20} />}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowMicMenu(!showMicMenu)}
-                  className={`px-2 rounded-r-lg border-l border-gray-600 transition-colors ${isMuted
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-gray-700 hover:bg-gray-600'
+                  onClick={() => {
+                    console.log('Mic dropdown clicked, current state:', showMicMenu);
+                    setShowMicMenu(!showMicMenu);
+                  }}
+                  className={`${isMobile ? 'px-2 py-3' : 'px-2 py-4'} rounded-r-lg border-l border-gray-600 transition-colors ${
+                    showMicMenu 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : isMuted
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-gray-700 hover:bg-gray-600'
                     }`}
-                  title="Select mic"
+                  title="Select microphone"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                     <path d="M6 8L2 4h8L6 8z" />
@@ -1106,29 +1502,99 @@ export default function CustomConference({
                 </button>
               </div>
               {showMicMenu && (
-                <div className={`absolute ${isMobile ? 'bottom-full left-0 w-full' : 'bottom-full left-0 w-64'} mb-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50`}>
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-700">
-                    SELECT MIC
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 z-[99998]" 
+                    onClick={() => setShowMicMenu(false)}
+                    style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}
+                  />
+                  {/* Dropdown */}
+                  <div 
+                    className={`fixed ${isMobile ? 'bottom-20 left-1/2 transform -translate-x-1/2 w-80' : 'bottom-20 left-4 w-72'} bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-500 py-2 z-[99999] max-h-60 overflow-y-auto`}
+                    style={{ 
+                      position: 'fixed',
+                      zIndex: 99999,
+                      backgroundColor: '#1f2937',
+                      border: '2px solid #3b82f6'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                  <div className="px-3 py-2 text-xs font-semibold text-white bg-blue-600 border-b border-gray-700 flex items-center justify-between">
+                    <span>🎤 SELECT MICROPHONE</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            console.log('Refreshing microphone devices...');
+                            await navigator.mediaDevices.getUserMedia({ audio: true });
+                            const devices = await navigator.mediaDevices.enumerateDevices();
+                            const audioInputs = devices.filter(device => device.kind === 'audioinput');
+                            console.log('Found audio inputs:', audioInputs);
+                            setAudioDevices(audioInputs);
+                          } catch (error) {
+                            console.error('Failed to refresh devices:', error);
+                          }
+                        }}
+                        className="text-xs text-white hover:text-blue-200"
+                        title="Refresh devices"
+                      >
+                        ↻
+                      </button>
+                      <button
+                        onClick={() => setShowMicMenu(false)}
+                        className="text-xs text-white hover:text-red-300"
+                        title="Close menu"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2 text-xs text-yellow-300 bg-gray-900">
+                    DEBUG: Dropdown is visible! State: {showMicMenu ? 'OPEN' : 'CLOSED'}
                   </div>
                   {audioDevices.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-gray-400">No microphones found</div>
+                    <div className="px-3 py-2 text-sm text-gray-400">
+                      <div>No microphones found</div>
+                      <div className="text-xs mt-1">Try refreshing or check permissions</div>
+                    </div>
                   ) : (
-                    audioDevices.map((device) => (
-                      <button
-                        key={device.deviceId}
-                        type="button"
-                        onClick={() => switchMicrophone(device.deviceId)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-700 transition-colors flex items-center gap-2 ${selectedMic === device.deviceId ? 'text-blue-400' : 'text-white'
-                          }`}
-                      >
-                        {selectedMic === device.deviceId && (
-                          <Check size={16} className="text-blue-400" />
-                        )}
-                        <span className="truncate">{device.label || `Microphone ${device.deviceId.slice(0, 5)}`}</span>
-                      </button>
-                    ))
+                    <>
+                      <div className="px-3 py-1 text-xs text-gray-500">
+                        Found {audioDevices.length} device(s)
+                      </div>
+                      {audioDevices.map((device, index) => {
+                        const deviceName = device.label || `Microphone ${index + 1}`;
+                        const isSelected = selectedMic === device.deviceId;
+                        
+                        return (
+                          <button
+                            key={device.deviceId}
+                            type="button"
+                            onClick={() => switchMicrophone(device.deviceId)}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-700 transition-colors flex items-center gap-2 ${
+                              isSelected ? 'text-blue-400 bg-blue-900/30' : 'text-white'
+                            }`}
+                            title={`Device ID: ${device.deviceId}`}
+                          >
+                            {isSelected && (
+                              <Check size={16} className="text-blue-400 flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate font-medium">{deviceName}</div>
+                              {device.label && (
+                                <div className="text-xs text-gray-400 truncate">
+                                  ID: {device.deviceId.slice(0, 8)}...
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </>
                   )}
-                </div>
+                  </div>
+                </>
               )}
             </div>
 
@@ -1138,18 +1604,18 @@ export default function CustomConference({
                 <button
                   type="button"
                   onClick={toggleVideo}
-                  className={`p-4 rounded-l-lg transition-colors ${isVideoOff
+                  className={`${isMobile ? 'p-3' : 'p-4'} rounded-l-lg transition-colors ${isVideoOff
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-gray-700 hover:bg-gray-600'
                     }`}
                   title={isVideoOff ? 'Start Video' : 'Stop Video'}
                 >
-                  {isVideoOff ? <VideoOff size={20} /> : <Video size={20} />}
+                  {isVideoOff ? <VideoOff size={isMobile ? 18 : 20} /> : <Video size={isMobile ? 18 : 20} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowVideoMenu(!showVideoMenu)}
-                  className={`px-2 rounded-r-lg border-l border-gray-600 transition-colors ${isVideoOff
+                  className={`${isMobile ? 'px-2 py-3' : 'px-2 py-4'} rounded-r-lg border-l border-gray-600 transition-colors ${isVideoOff
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-gray-700 hover:bg-gray-600'
                     }`}
@@ -1162,7 +1628,15 @@ export default function CustomConference({
               </div>
 
               {showVideoMenu && (
-                <div className={`absolute ${isMobile ? 'bottom-full left-0 w-full' : 'bottom-full left-0 w-64'} mb-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50`}>
+                <div 
+                  className={`fixed ${isMobile ? 'bottom-20 left-1/2 transform -translate-x-1/2 w-80' : 'bottom-20 left-20 w-72'} bg-gray-800 rounded-lg shadow-2xl border-2 border-green-500 py-2 z-[99999] max-h-60 overflow-y-auto`}
+                  style={{ 
+                    position: 'fixed',
+                    zIndex: 99999,
+                    backgroundColor: '#1f2937',
+                    border: '2px solid #10b981'
+                  }}
+                >
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-700">
                     SELECT CAMERA
                   </div>
@@ -1193,14 +1667,22 @@ export default function CustomConference({
               <button
                 type="button"
                 onClick={() => setShowSpeakerMenu(!showSpeakerMenu)}
-                className="p-4 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+                className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors`}
                 title="Select speaker"
               >
-                <Volume2 size={20} />
+                <Volume2 size={isMobile ? 18 : 20} />
               </button>
 
               {showSpeakerMenu && (
-                <div className={`absolute ${isMobile ? 'bottom-full left-0 w-full' : 'bottom-full left-0 w-64'} mb-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50`}>
+                <div 
+                  className={`fixed ${isMobile ? 'bottom-20 left-1/2 transform -translate-x-1/2 w-80' : 'bottom-20 left-36 w-72'} bg-gray-800 rounded-lg shadow-2xl border-2 border-purple-500 py-2 z-[99999] max-h-60 overflow-y-auto`}
+                  style={{ 
+                    position: 'fixed',
+                    zIndex: 99999,
+                    backgroundColor: '#1f2937',
+                    border: '2px solid #8b5cf6'
+                  }}
+                >
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-gray-700">
                     SELECT SPEAKER
                   </div>
@@ -1230,23 +1712,23 @@ export default function CustomConference({
             <button
               type="button"
               onClick={shareScreen}
-              className="p-4 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+              className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors`}
               title="Share Screen"
             >
-              <MonitorUp size={20} />
+              <MonitorUp size={isMobile ? 18 : 20} />
             </button>
 
             {/* Participants */}
             <button
               type="button"
               onClick={() => setShowParticipants(!showParticipants)}
-              className={`p-4 rounded-lg transition-colors ${showParticipants
+              className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg transition-colors ${showParticipants
                 ? 'bg-blue-600 hover:bg-blue-700'
                 : 'bg-gray-700 hover:bg-gray-600'
                 }`}
               title="Participants"
             >
-              <Users size={20} />
+              <Users size={isMobile ? 18 : 20} />
             </button>
 
             {/* Chat */}
@@ -1256,13 +1738,13 @@ export default function CustomConference({
                 setShowChat(!showChat);
                 if (!showChat) setUnreadCount(0);
               }}
-              className={`p-4 rounded-lg transition-colors relative ${showChat
+              className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg transition-colors relative ${showChat
                 ? 'bg-blue-600 hover:bg-blue-700'
                 : 'bg-gray-700 hover:bg-gray-600'
                 }`}
               title="Chat"
             >
-              <MessageSquare size={20} />
+              <MessageSquare size={isMobile ? 18 : 20} />
               {unreadCount > 0 && !showChat && (
                 <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -1274,13 +1756,13 @@ export default function CustomConference({
             <button
               type="button"
               onClick={toggleHandRaise}
-              className={`p-4 rounded-lg transition-colors ${handRaised
+              className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg transition-colors ${handRaised
                 ? 'bg-yellow-600 hover:bg-yellow-700'
                 : 'bg-gray-700 hover:bg-gray-600'
                 }`}
               title={handRaised ? 'Lower Hand' : 'Raise Hand'}
             >
-              <Hand size={20} className={handRaised ? 'animate-wiggle' : ''} />
+              <Hand size={isMobile ? 18 : 20} className={handRaised ? 'animate-wiggle' : ''} />
             </button>
 
             {/* Leave/End */}
@@ -1288,17 +1770,19 @@ export default function CustomConference({
               <button
                 type="button"
                 onClick={endSessionForAll}
-                className="px-6 py-4 rounded-lg bg-red-600 hover:bg-red-700 transition-colors font-medium flex items-center gap-2 ml-4"
+                className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} rounded-lg bg-red-600 hover:bg-red-700 transition-colors font-medium flex items-center gap-2 ${isMobile ? 'ml-2' : 'ml-4'}`}
               >
-                <PhoneOff size={20} />
+                <PhoneOff size={isMobile ? 18 : 20} />
+                {!isMobile && <span>End</span>}
               </button>
             ) : (
               <button
                 type="button"
                 onClick={leaveRoom}
-                className="px-6 py-4 rounded-lg bg-red-600 hover:bg-red-700 transition-colors font-medium flex items-center gap-2 ml-4"
+                className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} rounded-lg bg-red-600 hover:bg-red-700 transition-colors font-medium flex items-center gap-2 ${isMobile ? 'ml-2' : 'ml-4'}`}
               >
-                <PhoneOff size={20} />
+                <PhoneOff size={isMobile ? 18 : 20} />
+                {!isMobile && <span>Leave</span>}
               </button>
             )}
           </div>
