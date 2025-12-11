@@ -4,7 +4,6 @@ import React from 'react';
 import { Media } from '../../_data/schema';
 import { Formik, FormikHelpers, Form, Field } from 'formik';
 import { createMedia } from '../../action';
-import { useMediaContext } from '../../_context/media-context';
 import { toast } from 'sonner';
 import { Input } from '@/app/_components/ui/input';
 import { Label } from '@/app/_components/ui/label';
@@ -28,6 +27,7 @@ type MediaFormValues = {
 
 interface MediaFormProps {
   currentRow?: Media;
+  onClose?: () => void;
 }
 
 const mediaType = [
@@ -36,11 +36,10 @@ const mediaType = [
   { label: 'Ebook', value: 'EBOOK' },
 ];
 
-const MediaForm: React.FC<MediaFormProps> = ({ currentRow }) => {
+const MediaForm: React.FC<MediaFormProps> = ({ currentRow, onClose }) => {
   const isEdit = !!currentRow;
   const { courseId, levelId } = useParams();
   const { execute } = useServerAction(createMedia);
-  const { setOpen } = useMediaContext();
   const initialValues: MediaFormValues = {
     id: currentRow?.id || '',
     name: currentRow?.name || '',
@@ -66,7 +65,7 @@ const MediaForm: React.FC<MediaFormProps> = ({ currentRow }) => {
       size: values.size,
       format: values.format,
     });
-    setOpen(null);
+    onClose?.();
     if (err) {
       const dataErr = JSON.parse(err?.message);
 
@@ -89,8 +88,15 @@ const MediaForm: React.FC<MediaFormProps> = ({ currentRow }) => {
       onSubmit={onSubmit}
       initialValues={initialValues}
     >
-      {({ handleSubmit, isSubmitting, values }) => (
-        <Form onSubmit={handleSubmit} className="space-y-3 p-1">
+      {({ handleSubmit, isSubmitting, values }) => {
+        const isFormComplete =
+          values.name.trim().length > 0 &&
+          values.type.trim().length > 0 &&
+          values.url.trim().length > 0 &&
+          values.size > 0 &&
+          values.format.trim().length > 0;
+
+        return <Form onSubmit={handleSubmit} className="space-y-3 p-1">
           <div className="space-y-1">
             <Label>Name</Label>
             <Field as={Input} name="name" />
@@ -117,7 +123,11 @@ const MediaForm: React.FC<MediaFormProps> = ({ currentRow }) => {
             />
           ) : null}
 
-          <Button type="submit" className="translate-y-3">
+          <Button
+            type="submit"
+            className="translate-y-3"
+            disabled={!isFormComplete || isSubmitting}
+          >
             {isSubmitting ? (
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             ) : (
@@ -125,7 +135,7 @@ const MediaForm: React.FC<MediaFormProps> = ({ currentRow }) => {
             )}
           </Button>
         </Form>
-      )}
+      }}
     </Formik>
   );
 };

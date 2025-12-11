@@ -124,7 +124,8 @@ export class MediaPlayerCore implements IMediaPlayer {
       this.currentMedia = media;
       this.currentHandler = handler;
       this.state.currentMedia = media;
-      this.state.duration = handler.getDuration() || 0;
+      // Validate duration before using it
+      this.state.duration = this.validateDuration(handler.getDuration() || 0);
       this.state.error = null;
 
       // Start auto-save
@@ -338,12 +339,29 @@ export class MediaPlayerCore implements IMediaPlayer {
   private setupHandlerListeners(handler: IMediaHandler): void {
     handler.onTimeUpdate((time) => {
       this.state.currentTime = time;
-      this.state.duration = handler.getDuration() || 0;
+      // Update duration on every timeupdate as fallback
+      const currentDuration = handler.getDuration() || 0;
+      // Validate duration before using it
+      const validDuration = this.validateDuration(currentDuration);
+      if (validDuration !== this.state.duration) {
+        this.state.duration = validDuration;
+      }
       this.uiController.updateProgress(time, this.state.duration);
     });
 
+    // Register duration change callback if handler supports it
+    if (handler.onDurationChange) {
+      handler.onDurationChange((duration) => {
+        // Validate duration before using it
+        const validDuration = this.validateDuration(duration);
+        this.state.duration = validDuration;
+        this.uiController.updateProgress(this.state.currentTime, validDuration);
+      });
+    }
+
     handler.onEnded(() => {
       this.state.isPlaying = false;
+      this.state.currentTime = this.state.duration; // Set to end
       this.saveCurrentState();
       // Could trigger next media in playlist here
     });
@@ -399,5 +417,17 @@ export class MediaPlayerCore implements IMediaPlayer {
         viewMode: this.uiController.getViewMode()
       }
     };
+  }
+
+  /**
+   * Validate duration value to ensure it's a valid number
+   * Returns 0 for invalid values (NaN, Infinity, negative)
+   */
+  private validateDuration(duration: number): number {
+    // Check for invalid values
+    if (!Number.isFinite(duration) || isNaN(duration) || duration < 0) {
+      return 0;
+    }
+    return duration;
   }
 }

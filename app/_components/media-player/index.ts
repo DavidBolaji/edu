@@ -6,6 +6,7 @@
 export { FullPlayerView } from './full-player-view';
 export { MiniPlayerView } from './mini-player-view';
 export { PictureInPictureView } from './picture-in-picture-view';
+export { MediaPlayerModal } from './media-player-modal';
 export { UnifiedMediaPlayer, type MediaPlayerControls } from './unified-media-player';
 
 // Re-export types for convenience

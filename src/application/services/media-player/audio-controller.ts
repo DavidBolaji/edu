@@ -18,6 +18,7 @@ export class AudioController implements IMediaHandler {
   private timeUpdateCallback: ((time: number) => void) | null = null;
   private endedCallback: (() => void) | null = null;
   private errorCallback: ((error: MediaPlayerError) => void) | null = null;
+  private durationChangeCallback: ((duration: number) => void) | null = null;
   private isInitialized = false;
   private eventManager: EventListenerManager = new EventListenerManager();
 
@@ -68,20 +69,57 @@ export class AudioController implements IMediaHandler {
         const onError = () => {
           this.audioElement?.removeEventListener('loadedmetadata', onLoadedMetadata);
           this.audioElement?.removeEventListener('error', onError);
-          reject(this.createError(
-            MediaErrorCode.LOAD_FAILED,
-            'Failed to load audio metadata',
-            'high'
-          ));
+          
+          // Detect CORS errors
+          const audioError = this.audioElement?.error;
+          if (audioError) {
+            const isCorsError = 
+              audioError.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ||
+              audioError.code === MediaError.MEDIA_ERR_NETWORK;
+            
+            if (isCorsError) {
+              reject(this.createCorsError('Failed to load audio due to CORS restrictions'));
+            } else {
+              reject(this.createError(
+                MediaErrorCode.LOAD_FAILED,
+                `Failed to load audio metadata: ${this.getMediaErrorMessage(audioError)}`,
+                'high'
+              ));
+            }
+          } else {
+            reject(this.createError(
+              MediaErrorCode.LOAD_FAILED,
+              'Failed to load audio metadata',
+              'high'
+            ));
+          }
         };
 
         this.audioElement.addEventListener('loadedmetadata', onLoadedMetadata);
         this.audioElement.addEventListener('error', onError);
       });
     } catch (error) {
-      const mediaError = error instanceof Error 
-        ? this.createError(MediaErrorCode.LOAD_FAILED, error.message, 'high')
-        : this.createError(MediaErrorCode.UNKNOWN_ERROR, 'Unknown error during load', 'high');
+      let mediaError: MediaPlayerError;
+      
+      if (error && typeof error === 'object' && 'code' in error) {
+        // Already a MediaPlayerError
+        mediaError = error as MediaPlayerError;
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorString = errorMessage.toLowerCase();
+        
+        // Detect CORS errors from error message
+        if (
+          errorString.includes('cors') ||
+          errorString.includes('cross-origin') ||
+          errorString.includes('access-control-allow-origin') ||
+          errorString.includes('blocked by cors')
+        ) {
+          mediaError = this.createCorsError(errorMessage);
+        } else {
+          mediaError = this.createError(MediaErrorCode.LOAD_FAILED, errorMessage, 'high');
+        }
+      }
       
       this.errorCallback?.(mediaError);
       throw mediaError;
@@ -162,6 +200,10 @@ export class AudioController implements IMediaHandler {
     this.errorCallback = callback;
   }
 
+  onDurationChange(callback: (duration: number) => void): void {
+    this.durationChangeCallback = callback;
+  }
+
   cleanup(): void {
     // Remove all tracked event listeners
     if (this.audioElement) {
@@ -196,6 +238,7 @@ export class AudioController implements IMediaHandler {
     this.timeUpdateCallback = null;
     this.endedCallback = null;
     this.errorCallback = null;
+    this.durationChangeCallback = null;
     this.isInitialized = false;
   }
 
@@ -238,6 +281,28 @@ export class AudioController implements IMediaHandler {
     this.eventManager.addEventListener(this.audioElement, 'abort', loadErrorHandler);
     this.eventManager.addEventListener(this.audioElement, 'stalled', loadErrorHandler);
 
+    // Duration change listeners
+    const loadedMetadataHandler = () => {
+      if (this.audioElement && this.durationChangeCallback) {
+        const duration = this.audioElement.duration;
+        if (isFinite(duration)) {
+          this.durationChangeCallback(duration);
+        }
+      }
+    };
+
+    const durationChangeHandler = () => {
+      if (this.audioElement && this.durationChangeCallback) {
+        const duration = this.audioElement.duration;
+        if (isFinite(duration)) {
+          this.durationChangeCallback(duration);
+        }
+      }
+    };
+
+    this.eventManager.addEventListener(this.audioElement, 'loadedmetadata', loadedMetadataHandler);
+    this.eventManager.addEventListener(this.audioElement, 'durationchange', durationChangeHandler);
+
     // Append to container if available
     if (this.container) {
       this.container.appendChild(this.audioElement);
@@ -258,5 +323,41 @@ export class AudioController implements IMediaHandler {
         controller: 'AudioController'
       }
     };
+  }
+
+  private createCorsError(message: string): MediaPlayerError {
+    return {
+      code: MediaErrorCode.NETWORK_ERROR,
+      message: 'Unable to load audio due to CORS restrictions',
+      severity: 'high',
+      timestamp: new Date(),
+      context: {
+        controller: 'AudioController',
+        errorType: 'CORS',
+        originalMessage: message,
+        suggestions: [
+          'The audio file may be hosted on a server that blocks cross-origin requests',
+          'Verify that the server has proper CORS headers configured',
+          'Check if the audio URL is accessible and properly configured',
+          'Try downloading the file for offline playback',
+          'Contact your administrator to configure CORS headers'
+        ]
+      }
+    };
+  }
+
+  private getMediaErrorMessage(error: MediaError): string {
+    switch (error.code) {
+      case MediaError.MEDIA_ERR_ABORTED:
+        return 'Audio loading was aborted';
+      case MediaError.MEDIA_ERR_NETWORK:
+        return 'Network error while loading audio';
+      case MediaError.MEDIA_ERR_DECODE:
+        return 'Audio decoding failed';
+      case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        return 'Audio format not supported or source not accessible';
+      default:
+        return 'Unknown audio error';
+    }
   }
 }

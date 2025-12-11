@@ -188,3 +188,41 @@ export const addSubmission = async (
   return;
 };
 
+export const upsertSubmission = async (
+  { portalId,
+    studentId,
+    file }: any
+) => {
+  // Check if submission already exists
+  const existingSubmission = await db.submission.findFirst({
+    where: {
+      portalId,
+      userId: studentId
+    }
+  });
+
+  if (existingSubmission) {
+    // Update existing submission
+    await db.submission.update({
+      where: {
+        id: existingSubmission.id
+      },
+      data: {
+        url: file,
+        updatedAt: new Date()
+      }
+    });
+  } else {
+    // Create new submission
+    await db.submission.create({
+      data: {
+        portalId,
+        userId: studentId,
+        url: file
+      }
+    });
+  }
+
+  return;
+};
+

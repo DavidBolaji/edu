@@ -235,8 +235,9 @@ export class MediaUIController implements IMediaUIController {
   }
 
   private formatTime(seconds: number): string {
-    if (!isFinite(seconds) || seconds < 0) {
-      return '0:00';
+    // Handle invalid values (NaN, Infinity, negative)
+    if (!isFinite(seconds) || seconds < 0 || isNaN(seconds)) {
+      return '--:--';
     }
 
     const hours = Math.floor(seconds / 3600);

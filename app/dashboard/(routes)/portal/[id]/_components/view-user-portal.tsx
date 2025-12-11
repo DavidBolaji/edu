@@ -96,7 +96,7 @@ export default function ViewUserPortal({portal, studentId}: {portal: Portal[], s
 
                   <div className="mt-4 flex items-center justify-between gap-2">
                     <div className="text-xs text-muted-foreground">
-                      {submitted ? "Submission received" : "No submission yet"}
+                      {submitted ? "Submission received • Can resubmit while open" : "No submission yet"}
                     </div>
                     <UploadDialog portal={portal} studentId={studentId} />
                   </div>

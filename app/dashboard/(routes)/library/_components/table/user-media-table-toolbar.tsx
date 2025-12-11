@@ -3,8 +3,11 @@ import { Input } from '@/app/_components/ui/input';
 import useCourseTitle from '../../_hooks/use-course-title';
 import { DataTableFacetedFilter } from '@/app/_components/table/data-table-faceted-filter';
 import { Button } from '@/app/_components/ui/button';
-import { Crosshair2Icon } from '@radix-ui/react-icons';
+import { Crosshair2Icon, TrashIcon } from '@radix-ui/react-icons';
 import useLevelName from '../../_hooks/use-level-name';
+import { toast } from 'sonner';
+import { openDatabase } from '@/app/_lib/indexed-db';
+import { useState } from 'react';
 
 // import { DataTableViewOptions } from './data-table-view-options'
 interface DataTableToolbarProps<TData> {
@@ -17,6 +20,37 @@ export function DataTableToolbar<TData>({
   const isFiltered = table.getState().columnFilters.length > 0;
   const { courses } = useCourseTitle();
   const { levels } = useLevelName();
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearAllCache = async () => {
+    if (!confirm('Are you sure you want to clear all cached media? This will remove all offline content.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      // Clear cache
+      const cache = await caches.open('media-cache-v5');
+      const keys = await cache.keys();
+      await Promise.all(keys.map(key => cache.delete(key)));
+
+      // Clear IndexedDB
+      const db = await openDatabase();
+      const tx = db.transaction('mediaMetadata', 'readwrite');
+      const store = tx.objectStore('mediaMetadata');
+      await store.clear();
+
+      toast.success('All cached media cleared successfully');
+      
+      // Refresh table
+      (table.options.meta as any)?.refreshData?.();
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      toast.error('Failed to clear cache');
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between">
@@ -59,16 +93,27 @@ export function DataTableToolbar<TData>({
           )}
         </div>
       </div>
-      {isFiltered && (
+      <div className="flex items-center space-x-2">
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            onClick={() => table.resetColumnFilters()}
+            className="h-8 px-2 lg:px-3"
+          >
+            Reset
+            <Crosshair2Icon className="ml-2 h-4 w-4" />
+          </Button>
+        )}
         <Button
-          variant="ghost"
-          onClick={() => table.resetColumnFilters()}
-          className="h-8 px-2 lg:px-3"
+          variant="outline"
+          onClick={handleClearAllCache}
+          disabled={isClearing}
+          className="h-8 px-2 lg:px-3 text-red-600 hover:text-red-700"
         >
-          Reset
-          <Crosshair2Icon className="ml-2 h-4 w-4" />
+          {isClearing ? 'Clearing...' : 'Clear All Cache'}
+          <TrashIcon className="ml-2 h-4 w-4" />
         </Button>
-      )}
+      </div>
       {/* <DataTableViewOptions table={table} /> */}
     </div>
   );

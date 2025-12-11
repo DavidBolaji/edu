@@ -71,7 +71,28 @@ export const columns: ColumnDef<OfflineMedia>[] = [
     ),
     cell: ({ row }) => {
       const { type } = row.original;
-      return <LongText className="max-w-36">{type}</LongText>;
+      
+      const getTypeColor = (mediaType: string) => {
+        switch (mediaType?.toUpperCase()) {
+          case 'AUDIO':
+            return 'bg-blue-100 text-blue-800 border-blue-200';
+          case 'VIDEO':
+            return 'bg-green-100 text-green-800 border-green-200';
+          case 'EBOOK':
+            return 'bg-purple-100 text-purple-800 border-purple-200';
+          default:
+            return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+      };
+
+      return (
+        <span className={cn(
+          'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+          getTypeColor(type)
+        )}>
+          {type?.toUpperCase() || 'UNKNOWN'}
+        </span>
+      );
     },
   },
   {
@@ -124,6 +145,15 @@ export const columns: ColumnDef<OfflineMedia>[] = [
 
   {
     id: 'actions',
-    cell: LibraryTableRowActions,
+    cell: ({ row, table }) => (
+      <LibraryTableRowActions 
+        row={row} 
+        allMedia={table.getRowModel().rows.map(r => r.original)}
+        onCacheCleared={() => {
+          // Trigger table refresh by calling the parent's refresh function
+          (table.options.meta as any)?.refreshData?.();
+        }}
+      />
+    ),
   },
 ];

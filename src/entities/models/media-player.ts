@@ -16,6 +16,7 @@ export interface IMediaPlayer {
   setPlaybackRate(rate: number): void;
   minimize(): void;
   maximize(): void;
+  togglePictureInPicture(): Promise<void>;
   close(): void;
   cleanup(): Promise<void>;
   getState(): IMediaState;
@@ -51,6 +52,12 @@ export interface IMediaHandler {
   onTimeUpdate(callback: (time: number) => void): void;
   onEnded(callback: () => void): void;
   onError(callback: (error: MediaPlayerError) => void): void;
+  /**
+   * Register callback for duration changes
+   * Called when media metadata loads or duration changes
+   * @param callback Function to call with the new duration value
+   */
+  onDurationChange?(callback: (duration: number) => void): void;
 }
 
 // Playback Persistence Interface (for IndexedDB storage)

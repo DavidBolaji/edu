@@ -1,11 +1,11 @@
 'use client';
 
-import { useMediaContext } from '../_context/media-context';
+import { useMediaDialogContext } from '../_context/media-dialog-context';
 import MediaActionDialog from './media-action-dialogs';
 import { MediaDeleteDialog } from './media-delete-dialog';
 
 export function MediaDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow } = useMediaContext();
+  const { open, setOpen, currentRow, setCurrentRow } = useMediaDialogContext();
   return (
     <>
       <MediaActionDialog

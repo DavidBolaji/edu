@@ -12,7 +12,7 @@ export class TutorRepository implements ITutorRepository {
     userId: string,
     params: IGetTutorsParams
   ): Promise<User[]> {
-    const whereClause: Prisma.UserWhereInput = {
+    const baseWhereClause: Prisma.UserWhereInput = {
       AND: [
         ...(params.search
           ? [
@@ -26,15 +26,37 @@ export class TutorRepository implements ITutorRepository {
           : []),
         { role: 'LECTURER' },
       ],
+      NOT: { id: userId },
     };
-    whereClause.NOT = { id: userId };
-    whereClause.school = school;
 
     try {
-      const user = await db.user.findMany({
-        where: whereClause,
+      // Get educators from same school first
+      const sameSchoolEducators = await db.user.findMany({
+        where: {
+          ...baseWhereClause,
+          school: school,
+        },
+        orderBy: [
+          { fname: 'asc' },
+          { lname: 'asc' }
+        ]
       });
-      return user;
+
+      // Get educators from other schools
+      const otherSchoolEducators = await db.user.findMany({
+        where: {
+          ...baseWhereClause,
+          school: { not: school },
+        },
+        orderBy: [
+          { school: 'asc' },
+          { fname: 'asc' },
+          { lname: 'asc' }
+        ]
+      });
+
+      // Combine results: same school first, then others
+      return [...sameSchoolEducators, ...otherSchoolEducators];
     } catch (error) {
       throw error;
     }

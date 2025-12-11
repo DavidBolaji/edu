@@ -39,7 +39,7 @@ const MediaActionDialog: React.FC<Props> = ({
           </DialogDescription>
         </AlertDialogHeader>
         <div className="-mr-4 w-full py-1 pr-4">
-          <MediaForm currentRow={currentRow} />
+          <MediaForm currentRow={currentRow} onClose={() => onOpenChange(false)} />
         </div>
       </DialogContent>
     </Dialog>

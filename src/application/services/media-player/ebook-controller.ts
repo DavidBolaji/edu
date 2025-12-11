@@ -52,8 +52,28 @@ export class EbookController implements IMediaHandler {
     try {
       this.stop();
       
-      // Load the ebook URL with security measures
-      this.iframe.src = media.url;
+      // Check if this is a blob URL (offline media from library)
+      const isBlobUrl = media.url.startsWith('blob:');
+      
+      if (isBlobUrl) {
+        // For blob URLs, remove sandbox entirely as they're local and safe
+        // Chrome blocks blob URLs in sandboxed iframes
+        if (this.iframe) {
+          this.iframe.removeAttribute('sandbox');
+        }
+        // Try to render blob URL directly first
+        await this.loadWithFallback(media);
+      } else {
+        // For Google Docs Viewer, use restrictive sandbox for security
+        if (this.iframe) {
+          this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox');
+        }
+        // Use Google Docs Viewer as a proxy to bypass CORS/CSP issues
+        // This works for PDF, DOCX, PPTX, and other document formats
+        const viewerUrl = this.formatGoogleDocsViewerURL(media.url);
+        this.iframe.src = viewerUrl;
+      }
+      
       this.currentPage = 0;
 
       await new Promise<void>((resolve, reject) => {
@@ -71,26 +91,106 @@ export class EbookController implements IMediaHandler {
           resolve();
         };
 
-        const onError = () => {
+        const onError = (event: Event) => {
           this.iframe?.removeEventListener('load', onLoad);
           this.iframe?.removeEventListener('error', onError);
-          reject(this.createError(
-            MediaErrorCode.LOAD_FAILED,
-            'Failed to load ebook',
-            'high'
-          ));
+          
+          // Try to detect the type of error
+          const errorEvent = event as ErrorEvent;
+          const errorMessage = errorEvent.message || 'Failed to load ebook';
+          const errorString = errorMessage.toLowerCase();
+          
+          // Check if this was a blob URL that failed
+          if (isBlobUrl) {
+            reject(this.createError(
+              MediaErrorCode.LOAD_FAILED,
+              'Failed to load offline ebook. The cached file may be corrupted or in an unsupported format.',
+              'high'
+            ));
+          }
+          // Detect CSP errors
+          else if (
+            errorString.includes('content security policy') ||
+            errorString.includes('csp') ||
+            errorString.includes('refused to load') ||
+            errorString.includes('blocked by csp')
+          ) {
+            reject(this.createCspError(errorMessage));
+          }
+          // Detect CORS errors
+          else if (
+            errorString.includes('cors') ||
+            errorString.includes('cross-origin') ||
+            errorString.includes('access-control-allow-origin') ||
+            errorString.includes('blocked')
+          ) {
+            reject(this.createCorsError(errorMessage));
+          }
+          // Generic error
+          else {
+            reject(this.createError(
+              MediaErrorCode.LOAD_FAILED,
+              'Failed to load ebook',
+              'high'
+            ));
+          }
         };
 
         this.iframe.addEventListener('load', onLoad);
         this.iframe.addEventListener('error', onError);
+        
+        // Also listen for CSP violations on the window
+        const cspViolationHandler = (event: SecurityPolicyViolationEvent) => {
+          console.error('CSP Violation detected:', event);
+          this.iframe?.removeEventListener('load', onLoad);
+          this.iframe?.removeEventListener('error', onError);
+          window.removeEventListener('securitypolicyviolation', cspViolationHandler);
+          
+          reject(this.createCspError(
+            `Content Security Policy violation: ${event.violatedDirective} - ${event.blockedURI}`
+          ));
+        };
+        
+        window.addEventListener('securitypolicyviolation', cspViolationHandler);
+        
+        // Cleanup CSP listener after a timeout
+        setTimeout(() => {
+          window.removeEventListener('securitypolicyviolation', cspViolationHandler);
+        }, 5000);
       });
 
       // Start simulating progress for ebook reading
       this.startProgressTracking();
     } catch (error) {
-      const mediaError = error instanceof Error 
-        ? this.createError(MediaErrorCode.LOAD_FAILED, error.message, 'high')
-        : this.createError(MediaErrorCode.UNKNOWN_ERROR, 'Unknown error during load', 'high');
+      let mediaError: MediaPlayerError;
+      
+      if (error && typeof error === 'object' && 'code' in error) {
+        // Already a MediaPlayerError
+        mediaError = error as MediaPlayerError;
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorString = errorMessage.toLowerCase();
+        
+        // Detect CSP errors from error message
+        if (
+          errorString.includes('content security policy') ||
+          errorString.includes('csp') ||
+          errorString.includes('refused to load')
+        ) {
+          mediaError = this.createCspError(errorMessage);
+        }
+        // Detect CORS errors from error message
+        else if (
+          errorString.includes('cors') ||
+          errorString.includes('cross-origin') ||
+          errorString.includes('access-control-allow-origin') ||
+          errorString.includes('blocked')
+        ) {
+          mediaError = this.createCorsError(errorMessage);
+        } else {
+          mediaError = this.createError(MediaErrorCode.LOAD_FAILED, errorMessage, 'high');
+        }
+      }
       
       this.errorCallback?.(mediaError);
       throw mediaError;
@@ -271,10 +371,12 @@ export class EbookController implements IMediaHandler {
       height: 100%;
       border: none;
       pointer-events: auto;
+      display: block;
+      z-index: 1;
     `;
 
-    // Set restrictive sandbox permissions
-    // Only allow scripts and same-origin, but prevent downloads, forms, popups
+    // Initially set minimal sandbox permissions
+    // We'll update these based on the content type being loaded
     this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
     
     // Prevent right-click context menu
@@ -282,26 +384,26 @@ export class EbookController implements IMediaHandler {
     
     // Set referrer policy for privacy
     this.iframe.setAttribute('referrerpolicy', 'no-referrer');
-    
-    // Set CSP for additional security
-    this.iframe.setAttribute('csp', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';");
 
     // Add iframe to wrapper
     this.contentWrapper.appendChild(this.iframe);
 
-    // Create transparent overlay to prevent direct interaction
-    const protectionOverlay = document.createElement('div');
-    protectionOverlay.style.cssText = `
+    // Create blocking overlay specifically for the Google Drive link area
+    // Google Docs Viewer shows "Open with Google Docs" link at top-right
+    const googleLinkBlocker = document.createElement('div');
+    googleLinkBlocker.style.cssText = `
       position: absolute;
       top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
+      right: 0;
+      width: 200px;
+      height: 60px;
+      z-index: 20;
+      pointer-events: auto;
       background: transparent;
+      cursor: default;
     `;
-    this.contentWrapper.appendChild(protectionOverlay);
+    googleLinkBlocker.title = 'Document viewer';
+    this.contentWrapper.appendChild(googleLinkBlocker);
 
     // Add wrapper to container
     if (this.container) {
@@ -452,6 +554,180 @@ export class EbookController implements IMediaHandler {
     }
   }
 
+  /**
+   * Load blob URL with intelligent fallback system
+   */
+  private async loadWithFallback(media: MediaItem): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.iframe) {
+        reject(new Error('Iframe not available'));
+        return;
+      }
+
+      let fallbackAttempted = false;
+
+      const onLoad = () => {
+        this.iframe?.removeEventListener('load', onLoad);
+        this.iframe?.removeEventListener('error', onError);
+        resolve();
+      };
+
+      const onError = async () => {
+        this.iframe?.removeEventListener('load', onLoad);
+        this.iframe?.removeEventListener('error', onError);
+
+        // If blob URL failed and we haven't tried fallback yet
+        if (!fallbackAttempted) {
+          fallbackAttempted = true;
+
+          // Check if we have internet connection
+          const isOnline = await this.checkInternetConnection();
+          
+          if (isOnline) {
+            // Try to get original URL from metadata and use Google Docs Viewer
+            const originalUrl = await this.getOriginalUrlFromCache(media.url);
+            
+            if (originalUrl) {
+              console.log('Blob URL failed, falling back to Google Docs Viewer with original URL');
+              
+              // Set up new listeners for fallback attempt
+              const fallbackOnLoad = () => {
+                this.iframe?.removeEventListener('load', fallbackOnLoad);
+                this.iframe?.removeEventListener('error', fallbackOnError);
+                resolve();
+              };
+
+              const fallbackOnError = () => {
+                this.iframe?.removeEventListener('load', fallbackOnLoad);
+                this.iframe?.removeEventListener('error', fallbackOnError);
+                reject(this.createError(
+                  MediaErrorCode.LOAD_FAILED,
+                  'Failed to load ebook both from cache and online',
+                  'high'
+                ));
+              };
+
+              if (this.iframe) {
+                // Switch to sandboxed mode for Google Docs Viewer
+                this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox');
+                
+                this.iframe.addEventListener('load', fallbackOnLoad);
+                this.iframe.addEventListener('error', fallbackOnError);
+
+                // Load with Google Docs Viewer
+                const viewerUrl = this.formatGoogleDocsViewerURL(originalUrl);
+                this.iframe.src = viewerUrl;
+              } else {
+                reject(new Error('Iframe lost during fallback'));
+              }
+              return;
+            }
+          }
+
+          // No internet or no original URL - show offline message
+          reject(this.createOfflineError(media.name));
+        } else {
+          // Fallback also failed
+          reject(this.createError(
+            MediaErrorCode.LOAD_FAILED,
+            'Failed to load ebook from both cache and online source',
+            'high'
+          ));
+        }
+      };
+
+      this.iframe.addEventListener('load', onLoad);
+      this.iframe.addEventListener('error', onError);
+
+      // Try loading blob URL first
+      this.iframe.src = media.url;
+    });
+  }
+
+  /**
+   * Check if internet connection is available
+   */
+  private async checkInternetConnection(): Promise<boolean> {
+    try {
+      // Try to fetch a small resource to check connectivity
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      return true;
+    } catch {
+      return navigator.onLine; // Fallback to navigator.onLine
+    }
+  }
+
+  /**
+   * Get original URL from IndexedDB cache metadata
+   */
+  private async getOriginalUrlFromCache(blobUrl: string): Promise<string | null> {
+    try {
+      // Open IndexedDB to get metadata
+      const dbRequest = indexedDB.open('media-db', 1);
+      
+      return new Promise((resolve) => {
+        dbRequest.onsuccess = () => {
+          const db = dbRequest.result;
+          const tx = db.transaction('mediaMetadata', 'readonly');
+          const store = tx.objectStore('mediaMetadata');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const allMetadata = getAllRequest.result;
+            
+            // Look for metadata with originalUrl field
+            for (const metadata of allMetadata) {
+              if (metadata.originalUrl && !metadata.originalUrl.startsWith('blob:')) {
+                resolve(metadata.originalUrl);
+                return;
+              }
+              // Fallback: look for any non-blob URL
+              if (metadata.url && !metadata.url.startsWith('blob:')) {
+                resolve(metadata.url);
+                return;
+              }
+            }
+            resolve(null);
+          };
+          
+          getAllRequest.onerror = () => resolve(null);
+        };
+        
+        dbRequest.onerror = () => resolve(null);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Format URL for Google Docs Viewer
+   * This bypasses CORS/CSP issues by using Google as a proxy
+   */
+  private formatGoogleDocsViewerURL(fileURL: string): string {
+    const baseURL = 'https://docs.google.com/gview';
+    const params = {
+      embedded: 'true',
+      url: fileURL,
+    };
+
+    const formattedURL = Object.keys(params)
+      .map((key) => {
+        return (
+          encodeURIComponent(key) +
+          '=' +
+          encodeURIComponent((params as any)[key as any])
+        );
+      })
+      .join('&');
+
+    return `${baseURL}?${formattedURL}`;
+  }
+
   private createError(
     code: MediaErrorCode,
     message: string,
@@ -466,6 +742,100 @@ export class EbookController implements IMediaHandler {
         controller: 'EbookController',
         currentPage: this.currentPage,
         totalPages: this.totalPages
+      }
+    };
+  }
+
+  private createCorsError(message: string): MediaPlayerError {
+    return {
+      code: MediaErrorCode.NETWORK_ERROR,
+      message: 'Unable to load ebook even with Google Docs Viewer proxy',
+      severity: 'high',
+      timestamp: new Date(),
+      context: {
+        controller: 'EbookController',
+        errorType: 'CORS',
+        originalMessage: message,
+        currentPage: this.currentPage,
+        totalPages: this.totalPages,
+        suggestions: [
+          'The ebook URL may not be publicly accessible',
+          'Verify that the file URL is correct and accessible from the internet',
+          'Google Docs Viewer requires publicly accessible URLs',
+          'Try downloading the file for offline viewing',
+          'Ensure the file is hosted on a public server (not localhost or private network)'
+        ]
+      }
+    };
+  }
+
+  private createCspError(message: string): MediaPlayerError {
+    return {
+      code: MediaErrorCode.PERMISSION_DENIED,
+      message: 'Content blocked by security policy',
+      severity: 'high',
+      timestamp: new Date(),
+      context: {
+        controller: 'EbookController',
+        errorType: 'CSP',
+        originalMessage: message,
+        currentPage: this.currentPage,
+        totalPages: this.totalPages,
+        suggestions: [
+          'The content is blocked by Content Security Policy settings',
+          'Google Docs Viewer is being used but may be blocked by your CSP',
+          'Contact your administrator to allow docs.google.com in frame-src',
+          'Try using a different file format (PDF instead of DOCX, or vice versa)',
+          'Download the file for offline viewing as an alternative'
+        ]
+      }
+    };
+  }
+
+  private createUnsupportedFormatError(format: string, fileName: string): MediaPlayerError {
+    const formatUpper = format.toUpperCase();
+    return {
+      code: MediaErrorCode.UNSUPPORTED_FORMAT,
+      message: `${formatUpper} format is not supported for offline viewing`,
+      severity: 'medium',
+      timestamp: new Date(),
+      context: {
+        controller: 'EbookController',
+        errorType: 'UNSUPPORTED_FORMAT',
+        format: formatUpper,
+        fileName,
+        currentPage: this.currentPage,
+        totalPages: this.totalPages,
+        suggestions: [
+          `${formatUpper} files cannot be displayed directly in the browser when cached offline`,
+          'Only PDF files are supported for offline ebook viewing',
+          'You can still access this file by clearing it from cache and viewing it online',
+          'Consider converting the file to PDF format for better offline compatibility',
+          'Use the "Clear from Cache" option and view the file online instead'
+        ]
+      }
+    };
+  }
+
+  private createOfflineError(fileName: string): MediaPlayerError {
+    return {
+      code: MediaErrorCode.NETWORK_ERROR,
+      message: 'Cannot view ebook offline - Internet connection required',
+      severity: 'medium',
+      timestamp: new Date(),
+      context: {
+        controller: 'EbookController',
+        errorType: 'OFFLINE_VIEWING_FAILED',
+        fileName,
+        currentPage: this.currentPage,
+        totalPages: this.totalPages,
+        suggestions: [
+          'This ebook format cannot be viewed offline in your browser',
+          'Please connect to the internet to view this ebook',
+          'The ebook will be loaded using Google Docs Viewer when online',
+          'Consider downloading PDF versions for better offline compatibility',
+          'Check your internet connection and try again'
+        ]
       }
     };
   }

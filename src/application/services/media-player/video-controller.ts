@@ -17,6 +17,7 @@ export class VideoController implements IMediaHandler {
   private timeUpdateCallback: ((time: number) => void) | null = null;
   private endedCallback: (() => void) | null = null;
   private errorCallback: ((error: MediaPlayerError) => void) | null = null;
+  private durationChangeCallback: ((duration: number) => void) | null = null;
   private isInitialized = false;
   private pipSupported = false;
   private eventManager: EventListenerManager = new EventListenerManager();
@@ -67,20 +68,57 @@ export class VideoController implements IMediaHandler {
         const onError = () => {
           this.videoElement?.removeEventListener('loadedmetadata', onLoadedMetadata);
           this.videoElement?.removeEventListener('error', onError);
-          reject(this.createError(
-            MediaErrorCode.LOAD_FAILED,
-            'Failed to load video metadata',
-            'high'
-          ));
+          
+          // Detect CORS errors
+          const videoError = this.videoElement?.error;
+          if (videoError) {
+            const isCorsError = 
+              videoError.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ||
+              videoError.code === MediaError.MEDIA_ERR_NETWORK;
+            
+            if (isCorsError) {
+              reject(this.createCorsError('Failed to load video due to CORS restrictions'));
+            } else {
+              reject(this.createError(
+                MediaErrorCode.LOAD_FAILED,
+                `Failed to load video metadata: ${this.getMediaErrorMessage(videoError)}`,
+                'high'
+              ));
+            }
+          } else {
+            reject(this.createError(
+              MediaErrorCode.LOAD_FAILED,
+              'Failed to load video metadata',
+              'high'
+            ));
+          }
         };
 
         this.videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
         this.videoElement.addEventListener('error', onError);
       });
     } catch (error) {
-      const mediaError = error instanceof Error 
-        ? this.createError(MediaErrorCode.LOAD_FAILED, error.message, 'high')
-        : this.createError(MediaErrorCode.UNKNOWN_ERROR, 'Unknown error during load', 'high');
+      let mediaError: MediaPlayerError;
+      
+      if (error && typeof error === 'object' && 'code' in error) {
+        // Already a MediaPlayerError
+        mediaError = error as MediaPlayerError;
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorString = errorMessage.toLowerCase();
+        
+        // Detect CORS errors from error message
+        if (
+          errorString.includes('cors') ||
+          errorString.includes('cross-origin') ||
+          errorString.includes('access-control-allow-origin') ||
+          errorString.includes('blocked by cors')
+        ) {
+          mediaError = this.createCorsError(errorMessage);
+        } else {
+          mediaError = this.createError(MediaErrorCode.LOAD_FAILED, errorMessage, 'high');
+        }
+      }
       
       this.errorCallback?.(mediaError);
       throw mediaError;
@@ -157,6 +195,10 @@ export class VideoController implements IMediaHandler {
 
   onError(callback: (error: MediaPlayerError) => void): void {
     this.errorCallback = callback;
+  }
+
+  onDurationChange(callback: (duration: number) => void): void {
+    this.durationChangeCallback = callback;
   }
 
   /**
@@ -253,6 +295,7 @@ export class VideoController implements IMediaHandler {
     this.timeUpdateCallback = null;
     this.endedCallback = null;
     this.errorCallback = null;
+    this.durationChangeCallback = null;
     this.isInitialized = false;
   }
 
@@ -306,6 +349,28 @@ export class VideoController implements IMediaHandler {
     this.eventManager.addEventListener(this.videoElement, 'abort', loadErrorHandler);
     this.eventManager.addEventListener(this.videoElement, 'stalled', loadErrorHandler);
 
+    // Duration change listeners
+    const loadedMetadataHandler = () => {
+      if (this.videoElement && this.durationChangeCallback) {
+        const duration = this.videoElement.duration;
+        if (isFinite(duration)) {
+          this.durationChangeCallback(duration);
+        }
+      }
+    };
+
+    const durationChangeHandler = () => {
+      if (this.videoElement && this.durationChangeCallback) {
+        const duration = this.videoElement.duration;
+        if (isFinite(duration)) {
+          this.durationChangeCallback(duration);
+        }
+      }
+    };
+
+    this.eventManager.addEventListener(this.videoElement, 'loadedmetadata', loadedMetadataHandler);
+    this.eventManager.addEventListener(this.videoElement, 'durationchange', durationChangeHandler);
+
     if (this.container) {
       this.container.appendChild(this.videoElement);
     }
@@ -330,5 +395,41 @@ export class VideoController implements IMediaHandler {
         pipSupported: this.pipSupported
       }
     };
+  }
+
+  private createCorsError(message: string): MediaPlayerError {
+    return {
+      code: MediaErrorCode.NETWORK_ERROR,
+      message: 'Unable to load video due to CORS restrictions',
+      severity: 'high',
+      timestamp: new Date(),
+      context: {
+        controller: 'VideoController',
+        errorType: 'CORS',
+        originalMessage: message,
+        suggestions: [
+          'The video file may be hosted on a server that blocks cross-origin requests',
+          'Verify that the server has proper CORS headers configured',
+          'Check if the video URL is accessible and properly configured',
+          'Try downloading the file for offline playback',
+          'Contact your administrator to configure CORS headers'
+        ]
+      }
+    };
+  }
+
+  private getMediaErrorMessage(error: MediaError): string {
+    switch (error.code) {
+      case MediaError.MEDIA_ERR_ABORTED:
+        return 'Video loading was aborted';
+      case MediaError.MEDIA_ERR_NETWORK:
+        return 'Network error while loading video';
+      case MediaError.MEDIA_ERR_DECODE:
+        return 'Video decoding failed';
+      case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        return 'Video format not supported or source not accessible';
+      default:
+        return 'Unknown video error';
+    }
   }
 }

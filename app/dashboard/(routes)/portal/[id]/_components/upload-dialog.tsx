@@ -12,7 +12,7 @@ import { Button } from "@/app/_components/ui/button"
 import { AlertDialogHeader } from "@/app/_components/ui/alert-dialog"
 import { Badge } from "@/app/_components/ui/badge"
 import { Input } from "@/app/_components/ui/input"
-import { addSubmission } from "../../action"
+import { addSubmission, upsertSubmission } from "../../action"
 import { convertToMp3, hasSubmitted } from "@/app/_lib/utils"
 import UploadMedia from "../../../courses/[courseId]/[levelId]/_components/form/upload-media"
 import axios, { AxiosProgressEvent } from "axios"
@@ -111,12 +111,17 @@ export function UploadDialog({ portal, studentId, triggerClassName }: Props) {
 
     try {
       setSubmitting(true)
-      await addSubmission({
+      await upsertSubmission({
         portalId: portal.id,
         studentId,
         file,
       })
-      toast.success("Submitted", { description: "Your file was uploaded successfully." })
+      const message = alreadySubmitted ? "Resubmitted" : "Submitted"
+      const description = alreadySubmitted 
+        ? "Your file was updated successfully." 
+        : "Your file was uploaded successfully."
+      
+      toast.success(message, { description })
       setOpen(false)
       setFile(null)
       window.location.reload();
@@ -136,15 +141,18 @@ export function UploadDialog({ portal, studentId, triggerClassName }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={triggerClassName} disabled={alreadySubmitted || disabled}>
-          {alreadySubmitted ? "Already submitted" : disabled ? "Portal is closed" : "Submit"}
+        <Button className={triggerClassName} disabled={disabled}>
+          {disabled ? "Portal is closed" : alreadySubmitted ? "Resubmit" : "Submit"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <DialogTitle>Submit to Portal</DialogTitle>
+          <DialogTitle>{alreadySubmitted ? "Resubmit to Portal" : "Submit to Portal"}</DialogTitle>
           <DialogDescription>
-            Upload the requested file type below. Multiple submissions are not allowed.
+            {alreadySubmitted 
+              ? "Upload a new file to replace your previous submission. This will overwrite your existing submission."
+              : "Upload the requested file type below. You can resubmit while the portal is open."
+            }
           </DialogDescription>
         </AlertDialogHeader>
 
@@ -192,7 +200,10 @@ export function UploadDialog({ portal, studentId, triggerClassName }: Props) {
             Cancel
           </Button>
           <Button onClick={onSubmit} disabled={submitting || !file}>
-            {submitting ? "Submitting..." : "Submit"}
+            {submitting 
+              ? (alreadySubmitted ? "Resubmitting..." : "Submitting...") 
+              : (alreadySubmitted ? "Resubmit" : "Submit")
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

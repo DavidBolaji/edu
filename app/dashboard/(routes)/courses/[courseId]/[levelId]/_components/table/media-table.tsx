@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,8 +28,6 @@ import {
   TableRow,
 } from '@/app/_components/ui/table';
 import { DataTableToolbar } from './media-table-toolbar';
-import { useMediaContext } from '../../_context/media-context';
-import { useParams } from 'next/navigation';
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -47,18 +45,6 @@ export function MediaTable({ columns, data }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const {setPlaylist} = useMediaContext()
-  const params = useParams<{courseId: string, levelId: string}>()
-  const courseId = params.courseId;
-  const levelId = params.levelId;
-
-  useEffect(() => {
-    console.log(data);
-    
-    const audioVideo = data.filter(el => el.type === "AUDIO")
-    console.log(audioVideo)
-    setPlaylist(audioVideo)
-  }, [courseId, levelId])
 
   const table = useReactTable({
     data,

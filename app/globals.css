@@ -157,3 +157,22 @@ body>* {
 .lk-chat {
   display: none !important;
 }
+
+/* Media Player Video Element Styles */
+#global-media-player-container video {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background-color: black;
+}
+
+[data-video-placeholder] video {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background-color: black !important;
+  position: relative !important;
+  z-index: 1 !important;
+}

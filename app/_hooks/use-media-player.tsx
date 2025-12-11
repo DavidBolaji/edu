@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { 
-  IMediaState, 
-  MediaViewMode, 
+import {
+  IMediaState,
+  MediaViewMode,
   IMediaPlayer,
-  MediaPlayerError 
+  MediaPlayerError
 } from '@/src/entities/models/media-player';
 import { MediaItem, MediaType } from '@/src/entities/models/media';
 import { MediaPlayerCore } from '@/src/application/services/media-player';
@@ -23,7 +23,7 @@ interface UseMediaPlayerReturn {
   state: IMediaState;
   viewMode: MediaViewMode;
   isLoading: boolean;
-  
+
   // Actions
   loadMedia: (media: MediaItem) => Promise<void>;
   play: () => Promise<void>;
@@ -32,13 +32,13 @@ interface UseMediaPlayerReturn {
   seek: (position: number) => void;
   setVolume: (volume: number) => void;
   setPlaybackRate: (rate: number) => void;
-  
+
   // View Mode Controls
   minimize: () => void;
   maximize: () => void;
   pictureInPicture: () => Promise<void>;
   close: () => void;
-  
+
   // Player Instance
   player: IMediaPlayer | null;
 }
@@ -66,7 +66,7 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
 
   const [viewMode, setViewMode] = useState<MediaViewMode>(MediaViewMode.HIDDEN);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const playerRef = useRef<IMediaPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -94,7 +94,7 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
 
         // Set up event listeners for state synchronization
         // This would be implemented based on the MediaPlayerCore interface
-        
+
       } catch (error) {
         console.error('Failed to initialize media player:', error);
         onError?.({
@@ -128,7 +128,7 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
   // Media loading
   const loadMedia = useCallback(async (media: MediaItem) => {
     if (!playerRef.current) return;
-    
+
     setIsLoading(true);
     try {
       await playerRef.current.load(media);
@@ -158,10 +158,12 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
   // Playback controls
   const play = useCallback(async () => {
     if (!playerRef.current) return;
-    
+
     try {
-      await playerRef.current.play();
-      setState(prev => ({ ...prev, isPlaying: true, error: null }));
+      if (state.currentMedia?.type !== "EBOOK") {
+        await playerRef.current.play();
+        setState(prev => ({ ...prev, isPlaying: true, error: null }));
+      }
     } catch (error) {
       const mediaError: MediaPlayerError = {
         code: 'PLAYBACK_FAILED' as any,
@@ -177,14 +179,14 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
 
   const pause = useCallback(() => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.pause();
     setState(prev => ({ ...prev, isPlaying: false }));
   }, []);
 
   const stop = useCallback(() => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.stop();
     setState(prev => ({
       ...prev,
@@ -197,21 +199,21 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
 
   const seek = useCallback((position: number) => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.seek(position);
     setState(prev => ({ ...prev, currentTime: position }));
   }, []);
 
   const setVolume = useCallback((volume: number) => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.setVolume(volume);
     setState(prev => ({ ...prev, volume }));
   }, []);
 
   const setPlaybackRate = useCallback((rate: number) => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.setPlaybackRate(rate);
     setState(prev => ({ ...prev, playbackRate: rate }));
   }, []);
@@ -219,42 +221,42 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
   // View mode controls
   const minimize = useCallback(() => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.minimize();
     setViewMode(MediaViewMode.MINI);
-    setState(prev => ({ 
-      ...prev, 
-      isMinimized: true, 
-      isPictureInPicture: false 
+    setState(prev => ({
+      ...prev,
+      isMinimized: true,
+      isPictureInPicture: false
     }));
   }, []);
 
   const maximize = useCallback(() => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.maximize();
     setViewMode(MediaViewMode.FULL);
-    setState(prev => ({ 
-      ...prev, 
-      isMinimized: false, 
-      isPictureInPicture: false 
+    setState(prev => ({
+      ...prev,
+      isMinimized: false,
+      isPictureInPicture: false
     }));
   }, []);
 
   const pictureInPicture = useCallback(async () => {
     if (!playerRef.current || !state.currentMedia) return;
-    
+
     try {
       // Picture-in-picture is typically only available for video
       if (state.currentMedia.type !== MediaType.VIDEO) {
         throw new Error('Picture-in-picture only available for video content');
       }
-      
+
       setViewMode(MediaViewMode.PICTURE_IN_PICTURE);
-      setState(prev => ({ 
-        ...prev, 
-        isPictureInPicture: true, 
-        isMinimized: false 
+      setState(prev => ({
+        ...prev,
+        isPictureInPicture: true,
+        isMinimized: false
       }));
     } catch (error) {
       const mediaError: MediaPlayerError = {
@@ -271,7 +273,7 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
 
   const close = useCallback(() => {
     if (!playerRef.current) return;
-    
+
     playerRef.current.close();
     setState(prev => ({
       ...prev,
@@ -291,7 +293,7 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
     state,
     viewMode,
     isLoading,
-    
+
     // Actions
     loadMedia,
     play,
@@ -300,13 +302,13 @@ export function useMediaPlayer(options: UseMediaPlayerOptions = {}): UseMediaPla
     seek,
     setVolume,
     setPlaybackRate,
-    
+
     // View Mode Controls
     minimize,
     maximize,
     pictureInPicture,
     close,
-    
+
     // Player Instance
     player: playerRef.current
   };

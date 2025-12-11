@@ -1,15 +1,13 @@
 import React from 'react';
-import { OfflineContextProvider } from './_context/offline-context';
 import { Main } from '../../_components/main';
 import { columns } from './_components/table/library-columns';
 import { LibraryMediaTable } from './_components/table/library-table';
-import { OfflineViewerModal } from './_components/offline-media-modal';
 
 export const revalidate = 0;
 
 const CoursesPage = async () => {
   return (
-    <OfflineContextProvider>
+    <>
       <Main>
         <div className="mb-2 flex flex-wrap items-center justify-between space-y-2">
           <div>
@@ -21,8 +19,7 @@ const CoursesPage = async () => {
           <LibraryMediaTable columns={columns} />
         </div>
       </Main>
-      <OfflineViewerModal />
-    </OfflineContextProvider>
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { LOGO_URL } from '@/config';
+// import { LOGO_URL } from '@/config';
 import { Header } from 'antd/es/layout/layout';
 import Image from 'next/image';
 import AvatarComponent from './avatar-component';
@@ -43,7 +43,7 @@ export const DashboardHeader: React.FC<{
       }}
     >
       <div className="justify-between items-center w-full space-x-4 h-full hidden px-4">
-        <Image width={90} height={40} src={LOGO_URL} alt="Edutainment logo" />
+        <Image width={90} height={40} src={'/logo.png'} alt="Edutainment logo" />
       </div>
       <div className="flex justify-end items-center w-full space-x-4 h-full">
         <div className="items-center gap-x-2 md:flex hidden">

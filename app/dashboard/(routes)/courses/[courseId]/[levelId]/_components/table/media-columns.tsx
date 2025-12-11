@@ -90,6 +90,11 @@ export const columns: ColumnDef<Media>[] = [
   },
   {
     id: 'actions',
-    cell: MediaTableRowActions,
+    cell: ({ row, table }) => (
+      <MediaTableRowActions 
+        row={row} 
+        allMedia={table.getRowModel().rows.map(r => r.original)}
+      />
+    ),
   },
 ];

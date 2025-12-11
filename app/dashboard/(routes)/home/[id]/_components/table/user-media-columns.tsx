@@ -154,6 +154,11 @@ export const columns: ColumnDef<UserMedia>[] = [
   },
   {
     id: 'actions',
-    cell: UserMediaTableRowActions,
+    cell: ({ row, table }) => (
+      <UserMediaTableRowActions 
+        row={row} 
+        allMedia={table.getRowModel().rows.map(r => r.original)}
+      />
+    ),
   },
 ];

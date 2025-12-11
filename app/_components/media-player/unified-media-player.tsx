@@ -5,9 +5,9 @@ import { cn } from '@/app/_lib/utils';
 import { FullPlayerView } from './full-player-view';
 import { MiniPlayerView } from './mini-player-view';
 import { PictureInPictureView } from './picture-in-picture-view';
-import { 
-  IMediaState, 
-  MediaViewMode, 
+import {
+  IMediaState,
+  MediaViewMode,
   IMediaPlayer,
   MediaPlayerError,
   MediaErrorCode
@@ -60,10 +60,12 @@ function UnifiedMediaPlayer({
   // Media player event handlers
   const handlePlay = useCallback(async () => {
     if (!mediaPlayer || !state.currentMedia) return;
-    
+
     try {
-      await mediaPlayer.play();
-      setState(prev => ({ ...prev, isPlaying: true, error: null }));
+      if (state.currentMedia?.type !== "EBOOK") {
+        await mediaPlayer.play();
+        setState(prev => ({ ...prev, isPlaying: true, error: null }));
+      }
     } catch (error) {
       const mediaError: MediaPlayerError = {
         code: MediaErrorCode.PLAYBACK_FAILED,
@@ -78,24 +80,24 @@ function UnifiedMediaPlayer({
 
   const handlePause = useCallback(() => {
     if (!mediaPlayer) return;
-    
+
     mediaPlayer.pause();
     setState(prev => ({ ...prev, isPlaying: false }));
   }, [mediaPlayer]);
 
   const handleSeek = useCallback((position: number) => {
     if (!mediaPlayer) return;
-    
+
     mediaPlayer.seek(position);
     setState(prev => ({ ...prev, currentTime: position }));
   }, [mediaPlayer]);
 
   const handleVolumeChange = useCallback((volume: number) => {
     if (!mediaPlayer) return;
-    
+
     mediaPlayer.setVolume(volume);
     setState(prev => ({ ...prev, volume }));
-    
+
     if (volume > 0) {
       setPreviousVolume(volume);
     }
@@ -112,31 +114,31 @@ function UnifiedMediaPlayer({
 
   const handleMinimize = useCallback(() => {
     setViewMode(MediaViewMode.MINI);
-    setState(prev => ({ 
-      ...prev, 
-      isMinimized: true, 
-      isPictureInPicture: false 
+    setState(prev => ({
+      ...prev,
+      isMinimized: true,
+      isPictureInPicture: false
     }));
   }, []);
 
   const handleMaximize = useCallback(() => {
     setViewMode(MediaViewMode.FULL);
-    setState(prev => ({ 
-      ...prev, 
-      isMinimized: false, 
-      isPictureInPicture: false 
+    setState(prev => ({
+      ...prev,
+      isMinimized: false,
+      isPictureInPicture: false
     }));
   }, []);
 
   const handlePictureInPicture = useCallback(async () => {
     if (state.currentMedia?.type !== MediaType.VIDEO) return;
-    
+
     try {
       setViewMode(MediaViewMode.PICTURE_IN_PICTURE);
-      setState(prev => ({ 
-        ...prev, 
-        isPictureInPicture: true, 
-        isMinimized: false 
+      setState(prev => ({
+        ...prev,
+        isPictureInPicture: true,
+        isMinimized: false
       }));
     } catch (error) {
       const mediaError: MediaPlayerError = {
@@ -154,28 +156,28 @@ function UnifiedMediaPlayer({
     if (mediaPlayer) {
       mediaPlayer.stop();
     }
-    
-    setState(prev => ({ 
-      ...prev, 
+
+    setState(prev => ({
+      ...prev,
       currentMedia: null,
       isPlaying: false,
       currentTime: 0,
       duration: 0,
       error: null
     }));
-    
+
     setViewMode(MediaViewMode.HIDDEN);
     onClose?.();
   }, [mediaPlayer, onClose]);
 
   const handleLoadMedia = useCallback(async (media: MediaItem) => {
     if (!mediaPlayer) return;
-    
+
     try {
       setState(prev => ({ ...prev, error: null }));
       await mediaPlayer.load(media);
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         currentMedia: media,
         currentTime: 0,
         isPlaying: false,
@@ -226,8 +228,8 @@ function UnifiedMediaPlayer({
           onMinimize={handleMinimize}
           onClose={handleClose}
           onPictureInPicture={
-            state.currentMedia.type === MediaType.VIDEO 
-              ? handlePictureInPicture 
+            state.currentMedia.type === MediaType.VIDEO
+              ? handlePictureInPicture
               : undefined
           }
         />
@@ -246,7 +248,7 @@ function UnifiedMediaPlayer({
       )}
 
       {/* Picture-in-Picture View */}
-      {viewMode === MediaViewMode.PICTURE_IN_PICTURE && (
+      {/* {viewMode === MediaViewMode.PICTURE_IN_PICTURE && (
         <PictureInPictureView
           state={state}
           onPlay={handlePlay}
@@ -255,7 +257,7 @@ function UnifiedMediaPlayer({
           onMaximize={handleMaximize}
           onClose={handleClose}
         />
-      )}
+      )} */}
     </div>
   );
 }

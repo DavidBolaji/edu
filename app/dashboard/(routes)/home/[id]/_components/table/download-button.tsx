@@ -8,7 +8,7 @@ import Spinner from '@/app/_components/ui/spinner';
 import { getMetadata, saveMetadata } from '@/app/_lib/indexed-db';
 import { createOffline } from '../../../action';
 
-const CACHE_NAME = 'media-cache-v3';
+const CACHE_NAME = 'media-cache-v5';
 
 interface DownloadButtonProps {
   mediaUrl: string;
@@ -65,21 +65,24 @@ const DownloadButton = ({
       const cache = await caches.open(CACHE_NAME);
       await cache.put(mediaUrl, resp);
 
-      // Store metadata
+      // Store metadata with all required fields including original URL
       const metadata = {
-        url: mediaUrl,
+        id: mediaId,
+        name: fileName,
         fileName,
-        type,
+        type: type.toUpperCase() as 'AUDIO' | 'VIDEO' | 'EBOOK', // Ensure proper enum value
+        format: fileName.split('.').pop() || 'unknown',
+        url: mediaUrl, // This will be used as the key for cache lookup
+        originalUrl: mediaUrl, // Store original URL for fallback
         size,
-        courseTitle,
-        levelName,
-        createdAt,
         course: {
-          title: title,
+          title: courseTitle,
         },
         level: {
-          name: name,
+          name: levelName,
         },
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(),
       };
      
       await saveMetadata(metadata);

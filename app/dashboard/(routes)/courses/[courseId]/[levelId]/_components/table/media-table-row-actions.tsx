@@ -1,7 +1,10 @@
+'use client';
+
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
 import { Media } from '../../_data/schema';
-import { useMediaContext } from '../../_context/media-context';
+import { useMediaPlayer } from '@/app/_contexts/media-player-provider';
+import { MediaItem, MediaType } from '@/src/entities/models/media';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +15,48 @@ import {
 } from '@/app/_components/ui/dropdown-menu';
 import { Button } from '@/app/_components/ui/button';
 import { Edit, Trash2, ViewIcon } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 interface DataTableRowActionsProps {
   row: Row<Media>;
+  allMedia?: Media[];
 }
 
-export function MediaTableRowActions({ row }: DataTableRowActionsProps) {
-  const { setCurrentRow, setOpen, setViewerType } = useMediaContext();
+export function MediaTableRowActions({ row, allMedia = [] }: DataTableRowActionsProps) {
+  const { loadMedia, loadPlaylist, play } = useMediaPlayer();
+  const params = useParams();
+  
+  // Convert Media to MediaItem format
+  const convertToMediaItem = (media: Media): MediaItem => ({
+    id: media.id,
+    name: media.name,
+    type: media.type as MediaType,
+    url: media.url,
+    size: media.size,
+    format: media.format,
+    courseId: params.courseId as string,
+    levelId: params.levelId as string,
+    userId: '', // Will be populated by the backend
+    createdAt: media.createdAt,
+    updatedAt: media.updatedAt,
+  });
+  
+  const handlePlayMedia = async () => {
+    const mediaItem = convertToMediaItem(row.original);
+    
+    // If we have multiple media items, load as playlist
+    if (allMedia.length > 1) {
+      const playlist = allMedia.map(convertToMediaItem);
+      const currentIndex = allMedia.findIndex(m => m.id === row.original.id);
+      await loadPlaylist(playlist, currentIndex >= 0 ? currentIndex : 0);
+    } else {
+      // Single media item
+      await loadMedia(mediaItem);
+    }
+    
+    // Start playback
+    await play();
+  };
 
   return (
     <>
@@ -33,51 +71,24 @@ export function MediaTableRowActions({ row }: DataTableRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original);
-              setOpen('edit');
-            }}
-          >
+          <DropdownMenuItem onClick={handlePlayMedia}>
+            Play
+            <DropdownMenuShortcut>
+              <ViewIcon size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>
             Edit
             <DropdownMenuShortcut>
               <Edit size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original);
-              setOpen('delete');
-            }}
-            className="text-red-500!"
-          >
+          <DropdownMenuItem className="text-red-500!">
             Delete
             <DropdownMenuShortcut>
               <Trash2 size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              const { type } = row.original;
-              setCurrentRow(row.original);
-
-              if (type === 'EBOOK') {
-                setViewerType('ebook');
-              } else if (type === 'AUDIO') {
-                setViewerType('audio');
-              } else if (type === 'VIDEO') {
-                setViewerType('video');
-              }
-
-              setOpen('viewer');
-            }}
-            className="text-red-500!"
-          >
-            View
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
