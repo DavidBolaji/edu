@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Portal } from './table/schema';
+import { deletePortal } from '../action';
+import { toast } from 'sonner';
+import { usePortaleContext } from '../_context/portal-context';
 
 import { AlertTriangle } from 'lucide-react';
 import { Label } from '@/app/_components/ui/label';
@@ -12,7 +15,6 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/app/_components/ui/alert';
-import { deleteManyPortal } from '../action';
 
 interface Props {
   open: boolean;
@@ -22,14 +24,27 @@ interface Props {
 
 export function PortalsDeleteDialog({ open, onOpenChange, currentRow }: Props) {
   const [value, setValue] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const { onDelete } = usePortaleContext();
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (value.trim() !== currentRow.course) return;
 
-    await deleteManyPortal([currentRow.id])
-
-    onOpenChange(false);
-    window.location.reload();
+    startTransition(async () => {
+      try {
+        const result = await deletePortal({ id: currentRow.id });
+        if (result[0]?.success) {
+          toast.success('Portal deleted successfully');
+          onOpenChange(false);
+          setValue('');
+          onDelete(currentRow.id); // Update the local state
+        } else {
+          toast.error('Failed to delete portal');
+        }
+      } catch (error) {
+        toast.error('An error occurred while deleting the portal');
+      }
+    });
   };
 
   return (
@@ -37,7 +52,8 @@ export function PortalsDeleteDialog({ open, onOpenChange, currentRow }: Props) {
       open={open}
       onOpenChange={onOpenChange}
       handleConfirm={handleDelete}
-      disabled={value.trim() !== currentRow.course}
+      disabled={value.trim() !== currentRow.course || isPending}
+      isLoading={isPending}
       title={
         <span className="text-destructive">
           <AlertTriangle

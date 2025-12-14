@@ -39,13 +39,16 @@ declare module '@tanstack/react-table' {
 interface DataTableProps {
   columns: ColumnDef<Submission>[];
   data: Submission[];
+  portalType?: 'AUDIO' | 'EBOOK' | 'VIDEO';
 }
 
-export function SubmissionTable({ columns, data }: DataTableProps) {
+export function SubmissionTable({ columns, data, portalType }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [openingRowId, setOpeningRowId] = useState<string | null>(null);
   const router = useRouter();
   const params = useParams();
 
@@ -56,10 +59,23 @@ export function SubmissionTable({ columns, data }: DataTableProps) {
       return;
     }
 
-    // Navigate to submission detail page (you may need to adjust this route)
-    startTransition(() => {
-      router.push(`/dashboard/portal/submissions/${params.portalId}/${submission.id}`);
-    });
+    // Set active row for visual feedback
+    setActiveRowId(submission.id);
+    setOpeningRowId(submission.id);
+    
+    // Clear opening state quickly, keep active state longer
+    setTimeout(() => {
+      setOpeningRowId(null);
+    }, 1000);
+    
+    setTimeout(() => {
+      setActiveRowId(null);
+    }, 3000);
+    
+    // Open media URL in new tab
+    if (submission.url) {
+      window.open(submission.url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const table = useReactTable({
@@ -117,7 +133,11 @@ export function SubmissionTable({ columns, data }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="group/row cursor-pointer hover:bg-muted/50 transition-colors"
+                  className={`group/row cursor-pointer hover:bg-muted/50 transition-colors duration-200 ${
+                    activeRowId === row.original.id 
+                      ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm' 
+                      : 'hover:shadow-sm'
+                  }`}
                   onClick={(event) => handleRowClick(row.original, event)}
                 >
                   {row.getVisibleCells().map((cell) => (

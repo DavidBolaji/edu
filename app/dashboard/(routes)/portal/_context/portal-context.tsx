@@ -11,12 +11,20 @@ interface PortalContextType {
   setOpen: (str: PortalDialogType | null) => void;
   currentRow: Portal | null;
   setCurrentRow: React.Dispatch<React.SetStateAction<Portal | null>>;
-  user:UserDetail
+  user: UserDetail;
+  onUpdate: (portal: Portal) => void;
+  onDelete: (portalId: string) => void;
+  onRefresh: () => void;
 }
 
 const PortalsContext = createContext<PortalContextType | null>(null);
 
-export const PortalContextProvider: React.FC<PropsWithChildren & {user: UserDetail}> = ({ children, user }) => {
+export const PortalContextProvider: React.FC<PropsWithChildren & {
+  user: UserDetail;
+  onUpdate: (portal: Portal) => void;
+  onDelete: (portalId: string) => void;
+  onRefresh: () => void;
+}> = ({ children, user, onUpdate, onDelete, onRefresh }) => {
   const [open, setOpen] = useState<PortalDialogType | null>(null);
   const [currentRow, setCurrentRow] = useState<Portal | null>(null);
 
@@ -25,7 +33,10 @@ export const PortalContextProvider: React.FC<PropsWithChildren & {user: UserDeta
     setOpen,
     currentRow,
     setCurrentRow,
-    user
+    user,
+    onUpdate,
+    onDelete,
+    onRefresh
   };
 
   return (

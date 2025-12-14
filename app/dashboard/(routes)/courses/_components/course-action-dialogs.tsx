@@ -32,7 +32,7 @@ const UserActionDialog: React.FC<Props> = ({
     >
       <DialogContent className="sm:max-w-lg">
         <AlertDialogHeader className="text-left">
-          <DialogTitle>{false ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Course' : 'Add New Course'}</DialogTitle>
           <DialogDescription>
             {isEdit ? 'Update the course here. ' : 'Create new course here. '}
             Click save when you&apos;re done.

@@ -30,7 +30,7 @@ export function DataTableToolbar<TData>({
     setIsClearing(true);
     try {
       // Clear cache
-      const cache = await caches.open('media-cache-v6');
+      const cache = await caches.open('media-cache-v7');
       const keys = await cache.keys();
       await Promise.all(keys.map(key => cache.delete(key)));
 
@@ -93,25 +93,31 @@ export function DataTableToolbar<TData>({
           )}
         </div>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1 sm:space-x-2">
         {isFiltered && (
           <Button
             variant="ghost"
             onClick={() => table.resetColumnFilters()}
-            className="h-8 px-2 lg:px-3"
+            className="h-8 px-1 sm:px-2 lg:px-3 text-xs sm:text-sm"
           >
-            Reset
-            <Crosshair2Icon className="ml-2 h-4 w-4" />
+            <span className="hidden sm:inline">Reset</span>
+            <span className="sm:hidden">R</span>
+            <Crosshair2Icon className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         )}
         <Button
           variant="outline"
           onClick={handleClearAllCache}
           disabled={isClearing}
-          className="h-8 px-2 lg:px-3 text-red-600 hover:text-red-700"
+          className="h-8 px-1 sm:px-2 lg:px-3 text-red-600 hover:text-red-700 text-xs sm:text-sm whitespace-nowrap"
         >
-          {isClearing ? 'Clearing...' : 'Clear All Cache'}
-          <TrashIcon className="ml-2 h-4 w-4" />
+          <span className="hidden sm:inline">
+            {isClearing ? 'Clearing...' : 'Clear All Cache'}
+          </span>
+          <span className="sm:hidden">
+            {isClearing ? 'Clear...' : 'Clear'}
+          </span>
+          <TrashIcon className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>
       {/* <DataTableViewOptions table={table} /> */}

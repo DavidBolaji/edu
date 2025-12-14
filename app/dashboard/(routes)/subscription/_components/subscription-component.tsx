@@ -43,6 +43,16 @@ export default function SubscriptionComponent({
   const [selectedOption, setSelectedOption] = useState(index < 0 ? 0 : index);
   const [loading, setLoading] = useState(false);
 
+  // Check if subscription is active
+  const now = new Date();
+  const isSubscriptionActive = subscriptionPlan && 
+    subscriptionPlan.expiresAt > now && 
+    subscriptionPlan.status !== 'EXPIRED';
+  
+  const daysRemaining = subscriptionPlan 
+    ? Math.max(0, Math.ceil((subscriptionPlan.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
   const handleSubscribe = async () => {
     if (selectedOption === 0) {
       toast.warning('You are already on the Free Plan.');
@@ -82,9 +92,7 @@ export default function SubscriptionComponent({
           userId: id,
           name: selectedPlan.label,
           price: selectedPlan.price,
-          expiresAt: new Date(
-            Date.now() + selectedPlan.months * 30 * 24 * 60 * 60 * 1000
-          ),
+          months: selectedPlan.months,
         }),
         createTransaction({
           userId: id,

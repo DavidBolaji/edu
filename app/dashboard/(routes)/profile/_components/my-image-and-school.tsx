@@ -40,7 +40,7 @@ const MyImageAndSchool: React.FC<{ user: UserDetail; edit?: boolean }> = ({
   return (
     <form className="items-center flex-col justify-center">
       <div
-        className="flex items-center w-1/4 mx-auto justify-center cursor-pointer"
+        className={`flex items-center w-1/4 mx-auto justify-center ${edit ? 'cursor-pointer' : 'cursor-default'}`}
         onClick={edit ? triggerChange : undefined}
       >
         <input
@@ -52,13 +52,13 @@ const MyImageAndSchool: React.FC<{ user: UserDetail; edit?: boolean }> = ({
         />
         <button className="hidden" type="button"></button>
         {user?.picture ? (
-          <div className="group relative">
-            {isUploading ? (
+          <div className={edit ? "group relative" : "relative"}>
+            {isUploading && edit ? (
               <div className="absolute ml-2 mt-2 inset-1/4">
                 <Spinner />
               </div>
             ) : null}
-            {!isUploading ? (
+            {!isUploading && edit ? (
               <div className="group-hover:flex w-full h-full rounded-full hidden absolute bg-black/75 items-center justify-center">
                 <Plus color="white" />
               </div>
@@ -72,19 +72,19 @@ const MyImageAndSchool: React.FC<{ user: UserDetail; edit?: boolean }> = ({
             />
           </div>
         ) : (
-          <div className="relative w-24 group h-24 bg-gray-300 rounded-full flex items-center justify-center">
-            {isUploading ? (
+          <div className={`relative w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center ${edit ? 'group' : ''}`}>
+            {isUploading && edit ? (
               <div className="absolute">
                 <Spinner />
               </div>
             ) : null}
-            {!isUploading ? (
+            {!isUploading && edit ? (
               <div className="group-hover:flex w-full h-full rounded-full hidden absolute bg-black/75 items-center justify-center">
                 <Plus color="white" />
               </div>
             ) : null}
             <User2 name="person" size={30} />
-            {edit ?? (
+            {edit && (
               <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <CameraIcon size={18} />
               </div>

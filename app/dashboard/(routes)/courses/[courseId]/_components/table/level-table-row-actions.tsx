@@ -11,9 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/app/_components/ui/dropdown-menu';
 import { Button } from '@/app/_components/ui/button';
-import { Edit, Trash2, ViewIcon } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
-import { startTransition } from 'react';
+import { Edit, Trash2 } from 'lucide-react';
 
 interface DataTableRowActionsProps {
   row: Row<Level>;
@@ -21,8 +19,19 @@ interface DataTableRowActionsProps {
 
 export function LevelTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useLevelContext();
-  const { courseId } = useParams();
-  const router = useRouter();
+  
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentRow(row.original);
+    setOpen('edit');
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentRow(row.original);
+    setOpen('delete');
+  };
+
   return (
     <>
       <DropdownMenu modal={false}>
@@ -30,53 +39,24 @@ export function LevelTableRowActions({ row }: DataTableRowActionsProps) {
           <Button
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            onClick={(e) => e.stopPropagation()}
           >
             <DotsHorizontalIcon className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original);
-              setOpen('edit');
-            }}
-          >
+          <DropdownMenuItem onClick={handleEdit}>
             Edit
             <DropdownMenuShortcut>
               <Edit size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original);
-              setOpen('delete');
-            }}
-            className="text-red-500!"
-          >
+          <DropdownMenuItem onClick={handleDelete} className="text-red-500">
             Delete
             <DropdownMenuShortcut>
               <Trash2 size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              // start showing the loading bar
-              ; (window as any).__showTopProgress?.()
-                ; (window as any).__showOverlayLoading?.()
-              // perform the navigation
-              startTransition(() => {
-
-                router.push(`/dashboard/courses/${courseId}/${row.original.id}`);
-              })
-            }}
-            className="text-red-500!"
-          >
-            View
-            <DropdownMenuShortcut>
-              <ViewIcon size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>

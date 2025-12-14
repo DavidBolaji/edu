@@ -32,7 +32,7 @@ const MediaActionDialog: React.FC<Props> = ({
     >
       <DialogContent className="sm:max-w-lg">
         <AlertDialogHeader className="text-left">
-          <DialogTitle>{false ? 'Edit Media' : 'Add New Media'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Media' : 'Add New Media'}</DialogTitle>
           <DialogDescription>
             {isEdit ? 'Update the media here. ' : 'Create new media here. '}
             Click save when you&apos;re done.

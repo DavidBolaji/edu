@@ -7,6 +7,7 @@ import { handleSearch } from '@/app/dashboard/action';
 import { User } from '@prisma/client';
 import { Empty } from 'antd';
 import { Loader2, Eye, UserCheck, UserPlus } from 'lucide-react';
+import Image from 'next/image';
 import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -67,11 +68,21 @@ const RenderTutors: React.FC<{ tutors: any; subscriptions: string[] }> = ({
         {/* Avatar Section */}
         <div className="flex justify-center mb-4">
           <div className="relative">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-indigo-300 transition-shadow duration-300">
-              <h3 className="text-white font-bold text-2xl sm:text-3xl">
-                {tutor?.fname?.charAt(0).toUpperCase() || 'T'}
-              </h3>
-            </div>
+            {tutor?.picture ? (
+              <Image
+                src={tutor.picture}
+                width={200}
+                height={200}
+                alt={`${tutor.fname} ${tutor.lname}`}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg group-hover:shadow-indigo-300 transition-shadow duration-300 border-2 border-indigo-200"
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-indigo-300 transition-shadow duration-300">
+                <h3 className="text-white font-bold text-2xl sm:text-3xl">
+                  {tutor?.fname?.charAt(0).toUpperCase() || 'T'}
+                </h3>
+              </div>
+            )}
             {isSubscribed && (
               <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 shadow-md">
                 <UserCheck className="w-4 h-4 text-white" />

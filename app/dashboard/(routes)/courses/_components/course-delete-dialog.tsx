@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Course } from '../_data/schema';
+import { deleteCourse } from '../action';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 import { AlertTriangle } from 'lucide-react';
 import { Label } from '@/app/_components/ui/label';
@@ -21,11 +24,27 @@ interface Props {
 
 export function CoursesDeleteDialog({ open, onOpenChange, currentRow }: Props) {
   const [value, setValue] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleDelete = () => {
     if (value.trim() !== currentRow.title) return;
 
-    onOpenChange(false);
+    startTransition(async () => {
+      try {
+        const result = await deleteCourse({ id: currentRow.id });
+        if (result[0]?.success) {
+          toast.success('Course deleted successfully');
+          onOpenChange(false);
+          setValue('');
+          router.refresh();
+        } else {
+          toast.error('Failed to delete course');
+        }
+      } catch (error) {
+        toast.error('An error occurred while deleting the course');
+      }
+    });
   };
 
   return (
@@ -33,14 +52,15 @@ export function CoursesDeleteDialog({ open, onOpenChange, currentRow }: Props) {
       open={open}
       onOpenChange={onOpenChange}
       handleConfirm={handleDelete}
-      disabled={value.trim() !== currentRow.title}
+      disabled={value.trim() !== currentRow.title || isPending}
+      isLoading={isPending}
       title={
         <span className="text-destructive">
           <AlertTriangle
             className="stroke-destructive mr-1 inline-block"
             size={18}
           />{' '}
-          Delete User
+          Delete Course
         </span>
       }
       desc={

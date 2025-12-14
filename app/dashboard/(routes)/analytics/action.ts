@@ -3,6 +3,8 @@
 import db from '@/prisma';
 import { getDetails } from '../../_services/user.services';
 import { eachDayOfInterval, endOfDay, startOfMonth } from 'date-fns';
+import { SubscriptionRevenueService } from '@/src/application/services/subscription-revenue.service';
+import { PointsCalculationService } from '@/src/application/services/points-calculation.service';
 
 const SUBSCRIPTION_FEE = 1000;
 const POINT_VALUES = {
@@ -19,6 +21,9 @@ const getOfflineDownloads = async (
   return db.offlineDownload.count({
     where: {
       educatorId: userId,
+      userId: {
+        not: userId, // Exclude self-downloads
+      },
       createdAt: { gte: startDate, lte: endDate },
     },
   });
@@ -38,7 +43,13 @@ const getLiveClassAttendees = async (
       },
     },
     select: {
-      attendees: true, // Select the attendees array
+      attendees: {
+        where: {
+          userId: {
+            not: userId, // Exclude self-attendance
+          },
+        },
+      },
     },
   });
 
@@ -56,6 +67,9 @@ const getMediaPlays = async (
   return db.play.count({
     where: {
       educatorId: userId,
+      userId: {
+        not: userId, // Exclude self-plays
+      },
       createdAt: {
         gte: startDate,
         lte: endDate,
@@ -97,106 +111,135 @@ const getDailyPoints = async (
   );
 };
 
+// This function is now replaced by PointsCalculationService.calculateTotalPointsForMonth()
+// Keeping for backward compatibility but will use the corrected service
 const getTotalUserPoints = async (startDate: Date, endDate: Date) => {
-  const users = await db.user.findMany({
-    where: {
-      role: 'LECTURER',
-    },
-  });
-
-  const usersPoints = await Promise.all(
-    users.map(async (user) => {
-      const [offlineDownloads, liveClasses, mediaPlays] = await Promise.all([
-        getOfflineDownloads(user.id, startDate, endDate),
-        getLiveClassAttendees(user.id, startDate, endDate),
-        getMediaPlays(user.id, startDate, endDate),
-      ]);
-
-      return (
-        offlineDownloads * POINT_VALUES.OFFLINE_DOWNLOAD +
-        liveClasses * POINT_VALUES.LIVE_CLASS_ATTENDANCE +
-        mediaPlays * POINT_VALUES.MEDIA_PLAY
-      );
-    })
-  );
-
-  return usersPoints.reduce((sum, points) => sum + points, 0);
+  const pointsService = new PointsCalculationService();
+  const pointsData = await pointsService.calculateTotalPointsForMonth(startDate);
+  return pointsData.totalPoints;
 };
 
+// This function is now replaced by SubscriptionRevenueService.getSubscribersForMonth()
+// Keeping for backward compatibility but will use the corrected service
 const getTotalSubscriptions = async () => {
+  const revenueService = new SubscriptionRevenueService();
   const currentDate = new Date();
-  const startOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    1
-  );
-  const endOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0
-  );
-
-  return db.subscriptionPlan.count({
-    where: {
-      AND: [
-        {
-          createdAt: {
-            lte: endOfMonth,
-          },
-        },
-        {
-          expiresAt: {
-            gte: startOfMonth,
-          },
-        },
-      ],
-    },
-  });
+  const subscriberData = await revenueService.getSubscribersForMonth(currentDate);
+  return subscriberData.count;
 };
 
 export const getSchoolAnalyticsService = async (userId: string) => {
-  const now = new Date();
-  const startOfCurrentMonth = startOfMonth(now);
+  try {
+    const now = new Date();
+    
+    // Get last processed withdrawal
+    const lastProcessedWithdrawal = await db.withdrawalRequest.findFirst({
+      where: {
+        userId,
+        status: 'PROCESSED'
+      },
+      orderBy: {
+        processedAt: 'desc'
+      }
+    });
 
-  const [
-    offlineDownloads,
-    liveClasses,
-    mediaPlays,
-    dailyPoints,
-    totalSchoolPoints,
-    totalSubscriptions,
-  ] = await Promise.all([
-    getOfflineDownloads(userId, startOfCurrentMonth, now),
-    getLiveClassAttendees(userId, startOfCurrentMonth, now),
-    getMediaPlays(userId, startOfCurrentMonth, now),
-    getDailyPoints(userId, startOfCurrentMonth, now),
-    getTotalUserPoints(startOfCurrentMonth, now),
-    getTotalSubscriptions(),
-  ]);
+    // Calculate from last processed withdrawal date or start of month
+    const calculationStartDate = lastProcessedWithdrawal?.processedAt 
+      ? new Date(lastProcessedWithdrawal.processedAt)
+      : startOfMonth(now);
 
-  const totalPoints =
-    offlineDownloads * POINT_VALUES.OFFLINE_DOWNLOAD +
-    liveClasses * POINT_VALUES.LIVE_CLASS_ATTENDANCE +
-    mediaPlays * POINT_VALUES.MEDIA_PLAY;
+    // Get all processed withdrawals to calculate total withdrawn amount
+    const allProcessedWithdrawals = await db.withdrawalRequest.findMany({
+      where: {
+        userId,
+        status: 'PROCESSED',
+        processedAt: {
+          gte: calculationStartDate
+        }
+      },
+      select: {
+        amount: true
+      }
+    });
 
-  const accruedAmount =
-    totalSchoolPoints > 0
-      ? (totalPoints / totalSchoolPoints) *
-        (0.7 * totalSubscriptions * SUBSCRIPTION_FEE)
+    const totalWithdrawnAmount = allProcessedWithdrawals.reduce(
+      (sum, withdrawal) => sum + withdrawal.amount, 
+      0
+    );
+
+    // Use corrected services for calculations
+    const revenueService = new SubscriptionRevenueService();
+    const pointsService = new PointsCalculationService();
+
+    const [
+      offlineDownloads,
+      liveClasses,
+      mediaPlays,
+      dailyPoints,
+      revenueData,
+      totalPointsData,
+      educatorPointsData
+    ] = await Promise.all([
+      getOfflineDownloads(userId, calculationStartDate, now),
+      getLiveClassAttendees(userId, calculationStartDate, now),
+      getMediaPlays(userId, calculationStartDate, now),
+      getDailyPoints(userId, calculationStartDate, now),
+      revenueService.calculateMonthlyRevenue(calculationStartDate),
+      pointsService.calculateTotalPointsForMonth(calculationStartDate),
+      pointsService.calculateEducatorPointsForMonth(userId, calculationStartDate)
+    ]);
+
+    const totalPoints = educatorPointsData.totalPoints;
+    const distributableRevenue = revenueService.calculateDistributableRevenue(revenueData.totalRevenue);
+
+    // Calculate gross earnings using corrected logic
+    const grossEarnings = totalPointsData.totalPoints > 0
+      ? (totalPoints / totalPointsData.totalPoints) * distributableRevenue
       : 0;
 
-  return {
-    offlineDownloads,
-    liveClassAttendees: liveClasses,
-    mediaPlays,
-    totalPoints,
-    accruedAmount,
-    dailyPoints,
-  };
+    // Calculate net available amount (gross earnings - already withdrawn)
+    const accruedAmount = Math.max(0, grossEarnings - totalWithdrawnAmount);
+
+    return {
+      offlineDownloads,
+      liveClassAttendees: liveClasses,
+      mediaPlays,
+      totalPoints,
+      accruedAmount,
+      dailyPoints,
+      lastWithdrawalDate: lastProcessedWithdrawal?.processedAt || null,
+      calculationPeriod: {
+        from: calculationStartDate,
+        to: now
+      },
+      // Debug information with corrected values
+      debug: {
+        totalSchoolPoints: totalPointsData.totalPoints,
+        totalSubscriptions: revenueData.subscriberCount,
+        revenuePool: distributableRevenue,
+        yourShare: totalPointsData.totalPoints > 0 ? (totalPoints / totalPointsData.totalPoints) : 0,
+        grossEarnings,
+        totalWithdrawnAmount,
+        lastProcessedWithdrawal: lastProcessedWithdrawal?.processedAt || null,
+        // Additional debug info
+        totalRevenue: revenueData.totalRevenue,
+        subscriberCount: revenueData.subscriberCount,
+        pointValue: totalPointsData.totalPoints > 0 ? distributableRevenue / totalPointsData.totalPoints : 0
+      }
+    };
+  } catch (error) {
+    console.error('Error in getSchoolAnalyticsService:', error);
+    throw new Error(`Analytics calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 export const getAnalytics = async () => {
-  const userId = (await getDetails()).id;
-  const analytics = await getSchoolAnalyticsService(userId);
-  return analytics;
+  try {
+    const userId = (await getDetails()).id;
+    const analytics = await getSchoolAnalyticsService(userId);
+    return analytics;
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    throw new Error(`Failed to fetch analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };

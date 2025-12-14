@@ -226,3 +226,39 @@ export const upsertSubmission = async (
   return;
 };
 
+export const deletePortal = createServerAction()
+  .input(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ input }) => {
+    const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+
+    if (!sessionId) {
+      throw new Error('User not authenticated');
+    }
+
+    const session = await validate(sessionId);
+
+    try {
+      // First delete all related submissions
+      await db.submission.deleteMany({
+        where: { portalId: input.id },
+      });
+
+      // Then delete the portal (ensure user owns it)
+      await db.portal.delete({
+        where: { 
+          id: input.id,
+          userId: session.userId // Ensure user owns the portal
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Delete portal error:', error);
+      return { success: false, error: 'Failed to delete portal' };
+    }
+  });
+

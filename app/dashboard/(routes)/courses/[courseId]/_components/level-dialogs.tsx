@@ -20,10 +20,8 @@ export function LevelDialogs() {
             key={`level-edit-${currentRow.id}`}
             open={open === 'edit'}
             onOpenChange={() => {
-              setOpen('edit');
-              setTimeout(() => {
-                setCurrentRow(null);
-              }, 500);
+              setOpen(null);
+              setCurrentRow(null);
             }}
             currentRow={currentRow}
           />
@@ -32,10 +30,8 @@ export function LevelDialogs() {
             key={`level-delete-${currentRow.id}`}
             open={open === 'delete'}
             onOpenChange={() => {
-              setOpen('delete');
-              setTimeout(() => {
-                setCurrentRow(null);
-              }, 500);
+              setOpen(null);
+              setCurrentRow(null);
             }}
             currentRow={currentRow}
           />

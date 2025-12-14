@@ -38,7 +38,7 @@ interface OfflineMedia {
  * Cache name for offline media storage
  * This should match the cache name used in the service worker and use-cached-media hook
  */
-const OFFLINE_MEDIA_CACHE_NAME = 'media-cache-v6';
+const OFFLINE_MEDIA_CACHE_NAME = 'media-cache-v7';
 
 /**
  * Converts offline media from IndexedDB cache to MediaItem format

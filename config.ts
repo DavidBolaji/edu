@@ -1,4 +1,4 @@
-export const SESSION_COOKIE = 'auth_session_06';
+export const SESSION_COOKIE = 'auth_session_11';
 export const PASSWORD_SALT_ROUNDS = 10;
 export const UPLOAD_URL_DATA = 'UPLOAD_URL_DATA';
 export const LOGO_URL =

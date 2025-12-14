@@ -10,15 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/_components/ui/c
 import { Input } from "@/app/_components/ui/input"
 import { Button } from "@/app/_components/ui/button"
 import { SubmissionTable } from "./table/submission-table"
-import { columns } from "./table/submissions-columns"
+import { createColumns } from "./table/submissions-columns"
 
-export default function ViewSubmissions({submissions, portal}: {submissions: Submission[], portal: {course: string}}) {
+export default function ViewSubmissions({submissions, portal}: {submissions: Submission[], portal: {course: string, type: 'AUDIO' | 'EBOOK' | 'VIDEO'}}) {
   const params = useParams<{ portalId: string }>()
   const router = useRouter()
   const portalId = params?.portalId
 
   const [subs, setSubs] = useState<Submission[]>([])
   const [q, setQ] = useState("")
+
+  const columns = useMemo(() => createColumns(portal?.type), [portal?.type])
 
   useEffect(() => {
     if (!portalId) return
@@ -45,8 +47,13 @@ export default function ViewSubmissions({submissions, portal}: {submissions: Sub
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>
+            <span className="flex items-center gap-2">
               {"Portal"} — {portal?.course}
+              {portal?.type && (
+                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  {portal.type.toLowerCase()} submissions
+                </span>
+              )}
             </span>
           </CardTitle>
         </CardHeader>
@@ -57,7 +64,7 @@ export default function ViewSubmissions({submissions, portal}: {submissions: Sub
             onChange={(e) => setQ(e.target.value)}
           />
           <div className="rounded-md border">
-           <SubmissionTable data={submissions} columns={columns} />
+           <SubmissionTable data={submissions} columns={columns} portalType={portal?.type} />
           </div>
         </CardContent>
       </Card>

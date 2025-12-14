@@ -16,7 +16,7 @@ const SingleSubmissionPage: React.FC<SubmissionsPageParams> = async ({
 }) => {
   const id = (await params).portalId;
   const user = await getDetails();
-  const req = await getPortalSubmissions(id) as unknown as  {submissions: Submission[], portal: {course: string}};
+  const req = await getPortalSubmissions(id) as unknown as  {submissions: Submission[], portal: {course: string, type: 'AUDIO' | 'EBOOK' | 'VIDEO'}};
   return <ViewSubmissions submissions={req.submissions} portal={req.portal} />;
 };
 

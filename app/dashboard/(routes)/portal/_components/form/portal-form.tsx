@@ -24,12 +24,13 @@ type PortalFormValues = {
 
 interface PortalFormProps {
     currentRow?: Portal;
+    onClose?: () => void;
 }
 
-const PortalForm: React.FC<PortalFormProps> = ({ currentRow }) => {
+const PortalForm: React.FC<PortalFormProps> = ({ currentRow, onClose }) => {
     const isEdit = !!currentRow;
     const { execute } = useServerAction(updatePortalAction);
-    const { setOpen } = usePortaleContext();
+    const { setOpen, onRefresh } = usePortaleContext();
     const initialValues: PortalFormValues = {
         id: currentRow?.id || '',
         desc: currentRow?.desc || '',
@@ -50,6 +51,7 @@ const PortalForm: React.FC<PortalFormProps> = ({ currentRow }) => {
             closeDate: values.closeDate,
         });
         setOpen(null);
+        onClose?.();
         if (err) {
             const dataErr = JSON.parse(err?.message);
 
@@ -57,10 +59,9 @@ const PortalForm: React.FC<PortalFormProps> = ({ currentRow }) => {
                 position: 'top-right',
             });
         } else {
-            toast.success('Portal created succesfully', { position: 'top-right' });
-            setTimeout(() => {
-                reload(`/dashboard/portal`);
-            }, 500);
+            toast.success('Portal updated successfully', { position: 'top-right' });
+            // Refresh the portal list to show updated data
+            onRefresh();
         }
         setSubmitting(false);
     };

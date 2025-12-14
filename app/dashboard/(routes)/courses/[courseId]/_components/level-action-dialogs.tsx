@@ -32,7 +32,7 @@ const LevelActionDialog: React.FC<Props> = ({
     >
       <DialogContent className="sm:max-w-lg">
         <AlertDialogHeader className="text-left">
-          <DialogTitle>{false ? 'Edit Level' : 'Add New Level'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Level' : 'Add New Level'}</DialogTitle>
           <DialogDescription>
             {isEdit ? 'Update the level here. ' : 'Create new level here. '}
             Click save when you&apos;re done.

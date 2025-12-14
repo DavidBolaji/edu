@@ -9,7 +9,7 @@ import { v4 as uuid } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useCreatorActions } from '../../room/[roomId]/_hooks/use-creator-action';
 import { Button } from '@/app/_components/ui/button';
-import { handleTest } from '@/app/dashboard/action';
+
 
 const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
   const router = useRouter();
@@ -109,7 +109,8 @@ const ViewProfile: React.FC<{ user: UserDetail }> = ({ user }) => {
         <MyImageAndSchool user={user} />
         <MyCounts user={user} />
         {/* <CreateViewCourse /> */}
-        {user?.role === 'LECTURER' && (
+       
+        {(user?.role === 'LECTURER' || user.role === 'ADMIN') && (
           <div>
             <div className="mt-2 flex gap-4 justify-center">
               <div className="">

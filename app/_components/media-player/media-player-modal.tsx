@@ -271,20 +271,18 @@ export function MediaPlayerModal() {
                             className="w-full h-full"
                         />
 
-                        {/* Close Button Overlay for Ebook - blocks Google Docs "open in new tab" */}
-                        {state.currentMedia?.type === 'EBOOK' && (
-                            <div className="absolute top-4 right-4 z-[160]">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleClose}
-                                    className="bg-black/60 hover:bg-black/80 text-white rounded-full h-10 w-10"
-                                    title="Close (Esc)"
-                                >
-                                    <X className="h-5 w-5" />
-                                </Button>
-                            </div>
-                        )}
+                        {/* Close Button Overlay - Always visible on mobile, positioned for touch */}
+                        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[160]">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleClose}
+                                className="bg-black/60 hover:bg-black/80 text-white rounded-full h-12 w-12 sm:h-10 sm:w-10 touch-manipulation"
+                                title="Close (Esc)"
+                            >
+                                <X className="h-6 w-6 sm:h-5 sm:w-5" />
+                            </Button>
+                        </div>
 
                         {/* Playlist Controls Overlay - Only for Audio */}
                         {state.currentMedia?.type === 'AUDIO' && playlist.length > 0 && (() => {

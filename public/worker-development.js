@@ -2,7 +2,7 @@
 var __webpack_exports__ = {};
 // public/sw.js - Main service worker file
 
-const CACHE_NAME = 'media-cache-v6';
+const CACHE_NAME = 'media-cache-v7';
 const OFFLINE_URL = '/offline.html';
 
 // Install event - cache critical assets

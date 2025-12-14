@@ -28,19 +28,18 @@ const UserActionDialog: React.FC<Props> = ({
       open={open}
       onOpenChange={(state) => {
         onOpenChange(state);
-        window.location.reload();
       }}
     >
       <DialogContent className="sm:max-w-lg">
         <AlertDialogHeader className="text-left">
-          <DialogTitle>Edit Course</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Portal' : 'Add New Portal'}</DialogTitle>
           <DialogDescription>
-            Update the Portal here {' '}
+            {isEdit ? 'Update the portal here. ' : 'Create new portal here. '}
             Click save when you&apos;re done.
           </DialogDescription>
         </AlertDialogHeader>
         <div className="-mr-4 w-full py-1 pr-4 -mt-4">
-          <PortalForm currentRow={currentRow} />
+          <PortalForm currentRow={currentRow} onClose={() => onOpenChange(false)} />
         </div>
       </DialogContent>
     </Dialog>

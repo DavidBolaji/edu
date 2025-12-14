@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 
 import { Checkbox } from '@/app/_components/ui/checkbox';
@@ -10,7 +11,19 @@ import { format } from 'date-fns';
 import { cn } from '@/app/_lib/utils';
 import { Submission } from '../../../../types';
 
-export const columns: ColumnDef<Submission>[] = [
+export const createColumns = (portalType?: 'AUDIO' | 'EBOOK' | 'VIDEO'): ColumnDef<Submission>[] => {
+  
+
+  const getMediaLabel = (type?: 'AUDIO' | 'EBOOK' | 'VIDEO') => {
+    switch (type) {
+      case 'AUDIO': return 'Listen';
+      case 'VIDEO': return 'Watch';
+      case 'EBOOK': return 'Read';
+      default: return 'View Media';
+    }
+  };
+
+  return [
   {
     id: 'select',
     header: ({ table }) => (
@@ -67,6 +80,35 @@ export const columns: ColumnDef<Submission>[] = [
     enableHiding: false
   },
   {
+    accessorKey: 'url',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Media" />
+    ),
+    cell: ({ row }) => {
+      const { url } = row.original;
+      
+      if (!url) return <span className="text-muted-foreground">No media</span>;
+      
+      const handleMediaClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      };
+
+      return (
+        <button
+          onClick={handleMediaClick}
+          title={`Click to open ${portalType?.toLowerCase() || 'media'} in new tab`}
+          className="text-blue-600 font-medium"
+        >
+          
+          {getMediaLabel(portalType)}
+        </button>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false
+  },
+  {
     accessorKey: 'createdAt',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Created" />
@@ -88,3 +130,7 @@ export const columns: ColumnDef<Submission>[] = [
     cell: SubmissionTableRowActions,
   },
 ];
+};
+
+// Export default columns for backward compatibility
+export const columns: ColumnDef<Submission>[] = createColumns();

@@ -81,7 +81,7 @@ export default function CustomConference({
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
   const [mutedParticipants, setMutedParticipants] = useState<Record<string, boolean>>({});
   const [allMuted, setAllMuted] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(true);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
@@ -1062,27 +1062,7 @@ export default function CustomConference({
             )}
           </button>
           
-          <button
-            onClick={() => {
-              console.log('Debug button clicked from header');
-              setShowDebugPanel(!showDebugPanel);
-              // Also open participants panel if it's closed
-              if (!showParticipants) {
-                setShowParticipants(true);
-              }
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              showDebugPanel 
-                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                : 'bg-gray-600 hover:bg-gray-700 text-white'
-            }`}
-            title="Toggle debug panel"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-            Debug
-          </button>
+        
         </div>
       </div>
 
@@ -1090,7 +1070,7 @@ export default function CustomConference({
       {showDebugPanel && !showParticipants && (
         <div className="fixed top-20 right-4 w-80 bg-gray-800 rounded-lg border-2 border-purple-500 p-4 z-[99999] shadow-2xl">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-purple-400">🐛 Debug Information</h4>
+            <h4 className="text-sm font-semibold text-purple-400">🐛 More</h4>
             <button 
               onClick={() => setShowDebugPanel(false)}
               className="text-xs text-gray-400 hover:text-white"
@@ -1189,7 +1169,7 @@ export default function CustomConference({
                   className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white"
                   title="Toggle debug panel"
                 >
-                  Debug
+                  More
                 </button>
                 {isMobile && (
                   <button onClick={() => setShowParticipants(false)} className="text-sm px-2 py-1 bg-gray-700 rounded">Close</button>
@@ -1201,7 +1181,7 @@ export default function CustomConference({
             {showDebugPanel && (
               <div className="mb-4 p-3 bg-gray-800 rounded border border-purple-500">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-purple-400">Debug Information</h4>
+                  <h4 className="text-sm font-semibold text-purple-400">More</h4>
                   <button 
                     onClick={() => setShowDebugPanel(false)}
                     className="text-xs text-gray-400 hover:text-white"
@@ -1283,7 +1263,7 @@ export default function CustomConference({
             {/* Fallback Admin Controls - Always show for debugging */}
             {!isHost && (
               <div className="mb-4 p-3 bg-orange-900/30 border border-orange-600/50 rounded-lg">
-                <h4 className="text-sm font-semibold text-orange-400 mb-3">Debug: Not Host</h4>
+                <h4 className="text-sm font-semibold text-orange-400 mb-3">Not Host</h4>
                 <p className="text-xs text-gray-400">If you should be host, check URL parameters</p>
               </div>
             )}

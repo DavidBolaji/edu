@@ -40,11 +40,21 @@ const PortalComponent: React.FC<{ user: UserDetail }> = ({ user }) => {
       await createPortal(values);
       setSubmitting(false);
       resetForm();
-      window.location.reload();
+      fetchPortals(); // Refresh the list instead of reloading page
       toast.success('Portal created successfully');
     } catch (error) {
       toast.error('Error creating portal');
     }
+  };
+
+  const updatePortal = (updatedPortal: Portal) => {
+    setPortals(prev => prev.map(portal => 
+      portal.id === updatedPortal.id ? updatedPortal : portal
+    ));
+  };
+
+  const removePortal = (portalId: string) => {
+    setPortals(prev => prev.filter(portal => portal.id !== portalId));
   };
 
   return (
@@ -54,7 +64,14 @@ const PortalComponent: React.FC<{ user: UserDetail }> = ({ user }) => {
         {user.courses?.length > 0 && (
           <PortalForm user={user} onSubmit={onSubmit} />
         )}
-        <PortalList portals={portals} loading={isLoading} user={user} />
+        <PortalList 
+          portals={portals} 
+          loading={isLoading} 
+          user={user}
+          onUpdate={updatePortal}
+          onDelete={removePortal}
+          onRefresh={fetchPortals}
+        />
       </div>
     </div>
   );

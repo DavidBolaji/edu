@@ -108,3 +108,36 @@ export const getLevelsName = async ({ userId }: { userId: string }) => {
     return { success: false };
   }
 };
+
+export const deleteLevel = createServerAction()
+  .input(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ input }) => {
+    const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+
+    if (!sessionId) {
+      throw new Error('User not authenticated');
+    }
+
+    await validate(sessionId);
+
+    try {
+      // First delete all related media
+      await db.media.deleteMany({
+        where: { levelId: input.id },
+      });
+
+      // Then delete the level
+      await db.level.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Delete level error:', error);
+      return { success: false, error: 'Failed to delete level' };
+    }
+  });

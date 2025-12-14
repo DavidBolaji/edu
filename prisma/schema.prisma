@@ -141,20 +141,26 @@ model OfflineDownload {
 
 //Play
 model Play {
-  id        String   @id @default(uuid())
-  userId    String
-  mediaId   String
-  media     Media    @relation(fields: [mediaId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id              String   @id @default(uuid())
+  userId          String
+  mediaId         String
+  media           Media    @relation(fields: [mediaId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
   durationWatched Float?   // seconds
   mediaDuration   Float?   // total length of media in seconds
-  createdAt DateTime @default(now())
-   watchRatio      Float?
+  watchRatio      Float?
+  sessionId       String?  // Track unique play sessions
+  userAgent       String?  // Browser/device info
+  ipAddress       String?  // IP address for anti-gaming
+  createdAt       DateTime @default(now())
 
   educatorId String
 
   @@index([userId])
   @@index([mediaId])
+  @@index([sessionId])
+  @@index([ipAddress])
+  @@index([createdAt])
 }
 
 //Portal
@@ -235,13 +241,76 @@ model Subscription {
 }
 
 model SubscriptionPlan {
-  id        String   @id @default(uuid())
-  name      String
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  price     Float
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id                String             @id @default(uuid())
+  name              String             // "Free" or "Premium"
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id])
+  price             Float              // Monthly price (1000 for premium, 0 for free)
+  originalPrice     Float?             // For discount tracking
+  discountPercent   Float?             // Percentage discount applied
+  expiresAt         DateTime
+  status            SubscriptionStatus @default(ACTIVE)
+  autoRenew         Boolean            @default(true)
+  planType          PlanType           @default(MONTHLY)
+  isYearly          Boolean            @default(false) // Toggle for yearly billing
+  monthsPaid        Int                @default(1)     // Number of months paid for
+  maxDownloads      Int?               // Monthly download limit
+  maxLiveClasses    Int?               // Monthly live class limit
+  features          Json?              // Additional features as JSON
+  lastRenewalDate   DateTime?          // Track last renewal
+  nextBillingDate   DateTime?          // When next payment is due
+  gracePeriodEnds   DateTime?          // Grace period after expiration
+  cancelledAt       DateTime?          // When user cancelled (but still active until expiry)
+  cancellationReason String?          // Why user cancelled
+  trialEndsAt       DateTime?          // Free trial end date
+  isTrialActive     Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status])
+  @@index([expiresAt])
+  @@index([nextBillingDate])
+  @@index([planType])
+}
+
+model SubscriptionPayment {
+  id                String        @id @default(uuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  subscriptionId    String
+  amount            Float         // Total amount paid
+  monthlyAmount     Float         // Monthly subscription rate (1000 for premium)
+  originalAmount    Float?        // Before any discounts
+  discountAmount    Float?        // Amount discounted
+  months            Int           // Number of months paid for
+  isYearly          Boolean       @default(false) // Whether this is yearly billing
+  planType          PlanType
+  paymentMethod     String?       // "paystack", "wallet", etc.
+  paymentReference  String?       // External payment reference
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentDate       DateTime      @default(now())
+  subscriptionStartDate DateTime  // When subscription period starts
+  subscriptionEndDate   DateTime  // When subscription period ends
+  expirationBefore  DateTime?
+  expirationAfter   DateTime
+  isRenewal         Boolean       @default(false)
+  renewalAttempt    Int           @default(1)
+  failureReason     String?       // If payment failed
+  refundAmount      Float?        // If refunded
+  refundDate        DateTime?
+  // Revenue allocation fields for mid-month subscriptions
+  currentMonthRevenue Float?      // Revenue allocated to current month
+  nextMonthRevenue    Float?      // Revenue allocated to next month
+  revenueRatio        Float?      // Ratio used for revenue split (0.0 to 1.0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([paymentDate])
+  @@index([paymentStatus])
+  @@index([subscriptionId])
+  @@index([subscriptionStartDate])
+  @@index([subscriptionEndDate])
 }
 
 model Submission {
@@ -279,6 +348,40 @@ model WebPush {
   @@index([userId])
 }
 
+model SubscriptionUsage {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  month           DateTime // First day of the month
+  downloadsUsed   Int      @default(0)
+  liveClassesUsed Int      @default(0)
+  lastResetDate   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId])
+  @@index([month])
+}
+
+model SubscriptionHistory {
+  id            String             @id @default(uuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id])
+  action        SubscriptionAction
+  oldStatus     SubscriptionStatus?
+  newStatus     SubscriptionStatus
+  oldExpiryDate DateTime?
+  newExpiryDate DateTime?
+  reason        String?
+  metadata      Json?              // Additional context
+  createdAt     DateTime           @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
 //User
 model User {
   id                  String              @id @default(uuid())
@@ -293,6 +396,11 @@ model User {
   isLive              Boolean             @default(false)
   code                String?
   role                ROLE
+  // Bank account details for payments
+  bankName            String?
+  accountNumber       String?
+  accountName         String?
+  bankCode            String?             // For Nigerian banks (e.g., "044" for Access Bank)
   title               UserTitle?
   courses             Course[]
   medias              Media[]
@@ -311,8 +419,13 @@ model User {
   liveClasses         LiveClass[]
   liveclassesAttendee LiveClassAttendee[]
   offlineDownloads    OfflineDownload[]
-  Session             Session[]
-  push                WebPush[]
+  withdrawalRequests    WithdrawalRequest[]
+  monthlyEarnings       EducatorMonthlyEarning[]
+  subscriptionPayments  SubscriptionPayment[]
+  subscriptionUsage     SubscriptionUsage[]
+  subscriptionHistory   SubscriptionHistory[]
+  Session               Session[]
+  push                  WebPush[]
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
@@ -344,6 +457,62 @@ model Wallet {
   @@index([userId])
 }
 
+model WithdrawalRequest {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id])
+  amount          Float
+  status          WithdrawalStatus @default(PENDING)
+  requestedAt     DateTime         @default(now())
+  processedAt     DateTime?
+  lastWithdrawal  DateTime?        // Track when user last withdrew
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model MonthlySettlement {
+  id                String                    @id @default(uuid())
+  month             DateTime                  // First day of the month (2024-01-01)
+  totalSubscribers  Int                       // Number of users with active subscriptions
+  totalRevenue      Float                     // Total revenue for the month (including prorated amounts)
+  totalPoints       Int
+  pointValue        Float                     // Revenue per point for this month
+  status            SettlementStatus          @default(CALCULATING)
+  // Additional tracking for subscription metrics
+  newSubscribers    Int                       @default(0) // New subscriptions this month
+  renewedSubscribers Int                      @default(0) // Renewed subscriptions this month
+  cancelledSubscribers Int                    @default(0) // Cancelled subscriptions this month
+  averageSubscriptionValue Float             @default(0) // Average monthly value per subscriber
+  createdAt         DateTime                  @default(now())
+  finalizedAt       DateTime?
+  
+  educatorEarnings  EducatorMonthlyEarning[]
+
+  @@unique([month])
+  @@index([month])
+  @@index([status])
+}
+
+model EducatorMonthlyEarning {
+  id               String           @id @default(uuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id])
+  settlementId     String
+  settlement       MonthlySettlement @relation(fields: [settlementId], references: [id])
+  points           Int
+  earnings         Float
+  withdrawn        Float            @default(0)
+  availableBalance Float
+  createdAt        DateTime         @default(now())
+
+  @@unique([userId, settlementId])
+  @@index([userId])
+  @@index([settlementId])
+}
+
 enum UserTitle {
   Mr
   Mrs
@@ -361,6 +530,7 @@ enum MediaType {
 enum ROLE {
   STUDENT
   LECTURER
+  ADMIN
 }
 
 enum PayoutStatus {
@@ -372,4 +542,54 @@ enum PaymentType {
   SUBSCRIPTION
   TOPUP
   PAYOUT
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum SettlementStatus {
+  CALCULATING
+  FINALIZED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+  TRIAL
+  GRACE_PERIOD
+  PENDING_RENEWAL
+}
+
+enum PlanType {
+  MONTHLY
+  YEARLY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum SubscriptionAction {
+  CREATED
+  RENEWED
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+  REACTIVATED
+  UPGRADED
+  DOWNGRADED
+  TRIAL_STARTED
+  TRIAL_ENDED
+  GRACE_PERIOD_STARTED
+  FAILED
 }

@@ -56,13 +56,23 @@ export class EbookController implements IMediaHandler {
       const isBlobUrl = media.url.startsWith('blob:');
       
       if (isBlobUrl) {
-        // For blob URLs, remove sandbox entirely as they're local and safe
-        // Chrome blocks blob URLs in sandboxed iframes
-        if (this.iframe) {
-          this.iframe.removeAttribute('sandbox');
+        // For offline ebooks, get the original URL and use Google Docs Viewer
+        const originalUrl = await this.getOriginalUrlFromCache(media.url);
+        
+        if (originalUrl) {
+          // Use Google Docs Viewer with original URL for consistent viewing experience
+          if (this.iframe) {
+            this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox');
+          }
+          const viewerUrl = this.formatGoogleDocsViewerURL(originalUrl);
+          this.iframe.src = viewerUrl;
+        } else {
+          // Fallback to blob URL if original URL not found
+          if (this.iframe) {
+            this.iframe.removeAttribute('sandbox');
+          }
+          await this.loadWithFallback(media);
         }
-        // Try to render blob URL directly first
-        await this.loadWithFallback(media);
       } else {
         // For Google Docs Viewer, use restrictive sandbox for security
         if (this.iframe) {

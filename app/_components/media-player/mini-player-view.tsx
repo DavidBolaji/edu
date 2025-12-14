@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { IMediaState } from '@/src/entities/models/media-player';
 import { MediaType } from '@/src/entities/models/media';
+import Image from 'next/image';
 
 interface MiniPlayerViewProps {
   state: IMediaState;
@@ -160,9 +161,11 @@ export function MiniPlayerView({
           {/* Media Thumbnail/Icon */}
           <div className="flex-shrink-0">
             {state.currentMedia.type === MediaType.VIDEO && state.currentMedia.metadata?.thumbnail ? (
-              <img
+              <Image
                 src={state.currentMedia.metadata.thumbnail}
                 alt={state.currentMedia.name}
+                width={80}
+                height={80}
                 className="w-8 h-8 rounded-lg object-cover shadow-sm"
               />
             ) : (

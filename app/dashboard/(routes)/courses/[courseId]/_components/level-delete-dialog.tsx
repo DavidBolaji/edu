@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Level } from '../_data/schema';
+import { deleteLevel } from '../action';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 import { AlertTriangle } from 'lucide-react';
 import { Label } from '@/app/_components/ui/label';
@@ -21,11 +24,27 @@ interface Props {
 
 export function LevelDeleteDialog({ open, onOpenChange, currentRow }: Props) {
   const [value, setValue] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleDelete = () => {
     if (value.trim() !== currentRow.name) return;
 
-    onOpenChange(false);
+    startTransition(async () => {
+      try {
+        const result = await deleteLevel({ id: currentRow.id });
+        if (result[0]?.success) {
+          toast.success('Level deleted successfully');
+          onOpenChange(false);
+          setValue('');
+          router.refresh();
+        } else {
+          toast.error('Failed to delete level');
+        }
+      } catch (error) {
+        toast.error('An error occurred while deleting the level');
+      }
+    });
   };
 
   return (
@@ -33,7 +52,8 @@ export function LevelDeleteDialog({ open, onOpenChange, currentRow }: Props) {
       open={open}
       onOpenChange={onOpenChange}
       handleConfirm={handleDelete}
-      disabled={value.trim() !== currentRow.name}
+      disabled={value.trim() !== currentRow.name || isPending}
+      isLoading={isPending}
       title={
         <span className="text-destructive">
           <AlertTriangle
@@ -57,11 +77,11 @@ export function LevelDeleteDialog({ open, onOpenChange, currentRow }: Props) {
           </p>
 
           <Label className="my-2">
-            Title:
+            Name:
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Enter course title to confirm deletion."
+              placeholder="Enter level name to confirm deletion."
             />
           </Label>
 

@@ -100,3 +100,34 @@ export const getMedia = async ({
     return { success: false };
   }
 };
+
+export const deleteMedia = createServerAction()
+  .input(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ input }) => {
+    const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+
+    if (!sessionId) {
+      throw new Error('User not authenticated');
+    }
+
+    const { userId } = await validate(sessionId);
+
+    try {
+      // Delete the media (ensure user owns it)
+      await db.media.delete({
+        where: { 
+          id: input.id,
+          userId: userId // Ensure user owns the media
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Delete media error:', error);
+      return { success: false, error: 'Failed to delete media' };
+    }
+  });

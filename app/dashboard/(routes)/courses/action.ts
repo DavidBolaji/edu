@@ -102,3 +102,43 @@ export const getCoursesTitle = async ({ userId }: { userId: string }) => {
     return { success: false };
   }
 };
+
+export const deleteCourse = createServerAction()
+  .input(
+    z.object({
+      id: z.string(),
+    })
+  )
+  .handler(async ({ input }) => {
+    const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+
+    if (!sessionId) {
+      throw new Error('User not authenticated');
+    }
+
+    const session = await validate(sessionId);
+
+    try {
+      // First delete all related media and levels
+      await db.media.deleteMany({
+        where: { courseId: input.id },
+      });
+      
+      await db.level.deleteMany({
+        where: { courseId: input.id },
+      });
+
+      // Then delete the course
+      await db.course.delete({
+        where: { 
+          id: input.id,
+          userId: session.userId // Ensure user owns the course
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Delete course error:', error);
+      return { success: false, error: 'Failed to delete course' };
+    }
+  });

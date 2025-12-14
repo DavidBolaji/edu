@@ -27,9 +27,10 @@ export const getPortalSubmissions = async (id: string) => {
             id
         },
         select: {
-            course: true
+            course: true,
+            type: true
         }
     })
 
-    return {submissions, portal} as unknown as {submissions: Submission[], portal: {course: string}};
+    return {submissions, portal} as unknown as {submissions: Submission[], portal: {course: string, type: 'AUDIO' | 'EBOOK' | 'VIDEO'}};
 };
