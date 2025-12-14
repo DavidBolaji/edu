@@ -1,0 +1,19 @@
+[build]
+  command = "pnpm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[scheduled.functions]]
+  name = "monthly-settlement"
+  schedule = "30 23 1 * *"
+  url = "/api/cron/monthly-settlement"
+  headers = { x-cron-secret = "$CRON_SECRET" }
+
+[[scheduled.functions]]
+  name = "revamped-update-subscriptions"
+  schedule = "30 23 * * *"
+  url = "/api/cron/revamped-update-subscriptions"
+  headers = { x-cron-secret = "$CRON_SECRET" }
+
